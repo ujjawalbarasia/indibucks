@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy } from 'firebase/firestore';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, where } from 'firebase/firestore';
 import { 
   TrendingUp, Shield, Zap, User, Menu, X, ChevronRight, Star, 
   Search, PieChart, ArrowUpRight, Briefcase, 
   CheckCircle, Lock, Loader, RefreshCw,
-  Camera, Volume2, Phone, Mail, MapPin, Users, Download, Table, Key, Sparkles, MessageCircle, Copy, Mic, Calculator, ArrowLeftRight
+  Camera, Volume2, Phone, Mail, MapPin, Users, Download, Table, Key, Sparkles, MessageCircle, Copy, Mic, Calculator, ArrowLeftRight, LogIn, Target
 } from 'lucide-react';
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell
 } from 'recharts';
 
 // --- Firebase Configuration ---
@@ -27,6 +27,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "indibucks-cd137";
 
+const googleProvider = new GoogleAuthProvider();
+
 const apiKey = ""; 
 
 // --- Configs & Data ---
@@ -39,7 +41,6 @@ const TRACKED_FUNDS = [
   { code: '119800', name: 'Nippon India Liquid Fund', category: 'Liquid', risk: 'Low', benchmark: 'CRISIL Liquid', minInv: 5000, tags: ['Emergency Fund', 'Safe'] },
 ];
 
-// --- Utilities ---
 const calculateCAGR = (currentNav, historicalData, years) => {
   if (!historicalData || historicalData.length === 0) return 0;
   const targetDate = new Date();
@@ -50,41 +51,6 @@ const calculateCAGR = (currentNav, historicalData, years) => {
   const cagr = (Math.pow(currentNav / pastNav, 1 / years) - 1) * 100;
   return cagr.toFixed(2);
 };
-
-// --- Audio Helper Functions (For AI Voice) ---
-function base64ToArrayBuffer(base64) {
-  const binaryString = window.atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-function createWavHeader(dataLength, sampleRate = 24000, numChannels = 1, bitsPerSample = 16) {
-  const buffer = new ArrayBuffer(44);
-  const view = new DataView(buffer);
-  const writeString = (view, offset, string) => {
-    for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-  };
-
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + dataLength, true);
-  writeString(view, 8, 'WAVE');
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true); 
-  view.setUint16(20, 1, true); 
-  view.setUint16(22, numChannels, true); 
-  view.setUint32(24, sampleRate, true); 
-  view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true); 
-  view.setUint16(32, numChannels * (bitsPerSample / 8), true); 
-  view.setUint16(34, bitsPerSample, true); 
-  writeString(view, 36, 'data');
-  view.setUint32(40, dataLength, true);
-
-  return buffer;
-}
 
 // --- API Helpers ---
 const callGeminiFlash = async (prompt, systemInstruction = "", useJson = false) => {
@@ -134,41 +100,38 @@ const executeOrderBSE = async (orderDetails) => {
   return { success: true, bseOrderId: `ORD-${Math.floor(Math.random() * 1000000)}`, paymentLink: "https://www.bsestarmf.in/payment-gateway-mock", message: "Order placed successfully on BSE Star MF Platform." };
 };
 
-// --- COMPONENTS ---
-
-// 1. Lead Capture Form
-const LeadForm = () => {
-  const [formData, setFormData] = useState({ name: '', phone: '', goal: 'Wealth Creation' });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+// --- AUTH COMPONENT ---
+const LoginModal = ({ onClose }) => {
+  const handleGoogleLogin = async () => {
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), { ...formData, timestamp: serverTimestamp(), source: 'Homepage Widget' });
-      setSubmitted(true);
-    } catch (err) { alert("Error."); } finally { setLoading(false); }
+      await signInWithPopup(auth, googleProvider);
+      onClose();
+    } catch (error) {
+      console.error("Login failed", error);
+      alert("Login failed. Please try again.");
+    }
   };
 
-  if (submitted) return <div className="bg-green-50 p-8 rounded-2xl text-center border border-green-100 shadow-sm"><CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-4"/><h3 className="text-xl font-bold">Request Received!</h3><p className="text-gray-600">Our advisor will call you shortly.</p></div>;
-
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-      <h3 className="text-2xl font-bold text-gray-900 mb-2">Get a Free Portfolio Review</h3>
-      <p className="text-gray-500 mb-6 text-sm">Speak to a human expert. No spam.</p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div><label className="text-sm font-medium">Name</label><input required className="w-full p-3 border rounded-lg" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}/></div>
-        <div><label className="text-sm font-medium">Phone</label><input required type="tel" className="w-full p-3 border rounded-lg" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}/></div>
-        <div><label className="text-sm font-medium">Goal</label><select className="w-full p-3 border rounded-lg bg-white" value={formData.goal} onChange={e => setFormData({...formData, goal: e.target.value})}><option>Wealth Creation</option><option>Tax Saving</option><option>Retirement</option></select></div>
-        <button disabled={loading} className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-bold">{loading ? '...' : 'Request Call Back'}</button>
-      </form>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-8 text-center relative animate-fade-in-up">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X /></button>
+        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <User className="w-8 h-8 text-indigo-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+        <p className="text-gray-500 mb-8">Access your portfolio and goals securely.</p>
+        <button onClick={handleGoogleLogin} className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-50 transition shadow-sm">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+          Continue with Google
+        </button>
+        <p className="text-xs text-gray-400 mt-6">By continuing, you agree to our Terms & Privacy Policy.</p>
+      </div>
     </div>
   );
 };
 
-// 2. SIP Calculator
+// --- 1. SIP CALCULATOR (Fixed: Added Definition) ---
 const SIPCalculator = () => {
   const [monthlyInv, setMonthlyInv] = useState(5000);
   const [years, setYears] = useState(10);
@@ -202,297 +165,11 @@ const SIPCalculator = () => {
   );
 };
 
-// 3. AI Advisor (Full)
-const AIAdvisor = ({ user }) => {
-  const [messages, setMessages] = useState([{ role: 'assistant', text: "Namaste! I am IndiGenie. How can I help you today?" }]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef(null);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const userText = input;
-    setMessages(prev => [...prev, { role: 'user', text: userText }]);
-    setInput('');
-    setIsTyping(true);
-    const aiText = await callGeminiFlash(userText, "You are an MFD expert. Sell Regular plans. Keep it short.");
-    setMessages(prev => [...prev, { role: 'assistant', text: aiText || "Error." }]);
-    setIsTyping(false);
-  };
-
-  const handleSpeak = async (text) => {
-    const audioBase64 = await callGeminiTTS(text);
-    if (audioBase64) {
-      const pcmBuffer = base64ToArrayBuffer(audioBase64);
-      const wavHeader = createWavHeader(pcmBuffer.byteLength, 24000); 
-      const wavBlob = new Blob([wavHeader, pcmBuffer], { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(wavBlob);
-      const audio = new Audio(audioUrl);
-      audio.play().catch(e => console.log("Audio play failed:", e));
-    }
-  };
-
-  return (
-    <div className="pt-24 pb-12 px-4 max-w-4xl mx-auto h-[90vh] flex flex-col">
-       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-1 flex flex-col">
-          <div className="bg-indigo-600 p-4 text-white font-bold flex justify-between">
-             <span>IndiGenie AI</span>
-             <button onClick={() => setMessages([])}><RefreshCw className="w-5 h-5"/></button>
-          </div>
-          <div className="flex-1 p-6 overflow-y-auto bg-slate-50" ref={scrollRef}>
-             {messages.map((msg, idx) => (
-                <div key={idx} className={`flex mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                   <div className={`p-4 rounded-2xl max-w-[85%] relative group ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200'}`}>
-                     {msg.text}
-                     {msg.role === 'assistant' && (
-                        <button onClick={() => handleSpeak(msg.text)} className="absolute -right-8 top-1 bg-gray-200 rounded-full p-1 opacity-0 group-hover:opacity-100"><Volume2 className="w-3 h-3 text-gray-600"/></button>
-                     )}
-                   </div>
-                </div>
-             ))}
-             {isTyping && <div className="text-xs text-gray-500 p-4">Thinking...</div>}
-          </div>
-          <div className="p-4 border-t border-gray-100 flex gap-2">
-             <input value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Ask something..." className="flex-1 p-3 border rounded-xl" />
-             <button onClick={handleSend} className="bg-indigo-600 text-white p-3 rounded-xl"><ArrowUpRight/></button>
-          </div>
-       </div>
-    </div>
-  );
-};
-
-// 4. Statement Analyzer (Full)
-const StatementAnalyzer = () => {
-  const [image, setImage] = useState(null);
-  const [analysis, setAnalysis] = useState('');
-  const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => { setImage(reader.result); setAnalysis(''); };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const analyzeImage = async () => {
-    if (!image) return;
-    setLoading(true);
-    const base64Data = image.split(',')[1];
-    const prompt = `Identify mutual funds in this image. Explain why switching to IndiBucks Regular Plans is better. Suggest replacements.`;
-    const result = await callGeminiVision(prompt, base64Data);
-    setAnalysis(result || "Could not analyze.");
-    setLoading(false);
-  };
-
-  return (
-    <div className="pt-24 pb-12 px-4 max-w-4xl mx-auto min-h-screen">
-       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-          <div className="bg-purple-600 p-8 text-white text-center">
-             <Camera className="w-12 h-12 mx-auto mb-4" />
-             <h1 className="text-3xl font-bold">Snap & Switch</h1>
-          </div>
-          <div className="p-8">
-             {!image ? (
-                <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:bg-gray-50">
-                   <p className="text-gray-500">Click to upload statement</p>
-                   <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
-                </div>
-             ) : (
-                <div className="space-y-6">
-                   <img src={image} className="w-full max-h-64 object-cover rounded-xl" />
-                   {!analysis ? (
-                      <button onClick={analyzeImage} disabled={loading} className="w-full bg-purple-600 text-white py-3 rounded-lg font-bold">{loading ? 'Analyzing...' : 'Analyze'}</button>
-                   ) : (
-                      <div className="bg-purple-50 p-6 rounded-xl whitespace-pre-wrap text-sm">{analysis}</div>
-                   )}
-                </div>
-             )}
-          </div>
-       </div>
-    </div>
-  );
-};
-
-// 5. Fund Explorer with Voice & WhatsApp
-const FundExplorer = ({ user, setView }) => {
-  const [funds, setFunds] = useState([]);
-  const [filteredFunds, setFilteredFunds] = useState([]);
-  const [selectedFund, setSelectedFund] = useState(null);
-  const [compareList, setCompareList] = useState([]);
-  const [isListening, setIsListening] = useState(false);
-  const [investAmount, setInvestAmount] = useState('');
-  const [ucc, setUcc] = useState('');
-  const [orderResult, setOrderResult] = useState(null);
-
-  const handleVoiceCommand = () => {
-    if (!('webkitSpeechRecognition' in window)) {
-      alert("Voice search not supported in this browser.");
-      return;
-    }
-    const recognition = new window.webkitSpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-IN';
-    
-    setIsListening(true);
-    recognition.start();
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.toLowerCase();
-      setIsListening(false);
-      if (transcript.includes("tax")) {
-        setFilteredFunds(funds.filter(f => f.category === 'ELSS'));
-      } else if (transcript.includes("risk") && transcript.includes("high")) {
-        setFilteredFunds(funds.filter(f => f.risk.includes('High')));
-      } else if (transcript.includes("safe") || transcript.includes("liquid")) {
-        setFilteredFunds(funds.filter(f => f.category === 'Liquid' || f.category === 'Large Cap'));
-      } else {
-        alert(`Heard: "${transcript}". Try saying "Show Tax Saving funds"`);
-      }
-    };
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
-  };
-
-  useEffect(() => {
-    const fetchFunds = async () => {
-      const promises = TRACKED_FUNDS.map(async (config) => {
-        try {
-          const response = await fetch(`https://api.mfapi.in/mf/${config.code}`);
-          const data = await response.json();
-          if (!data.meta) return null;
-          return {
-            id: config.code, name: data.meta.scheme_name, house: data.meta.fund_house, nav: parseFloat(data.data[0].nav), returns3Y: calculateCAGR(parseFloat(data.data[0].nav), data.data, 3), ...config
-          };
-        } catch(e) { return null; }
-      });
-      const results = await Promise.all(promises);
-      const validFunds = results.filter(f => f !== null);
-      setFunds(validFunds);
-      setFilteredFunds(validFunds);
-    };
-    fetchFunds();
-  }, []);
-
-  const handleWhatsAppInvest = () => {
-    const text = `Hi, I want to invest in *${selectedFund.name}* (Regular Plan).\nAmount: ₹${investAmount}\nMy Client Code: ${ucc || 'Pending'}\nPlease execute this order.`;
-    const url = `https://wa.me/919810793780?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-    if (user) {
-      addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'orders'), { fundId: selectedFund.id, fundName: selectedFund.name, amount: parseFloat(investAmount), status: 'WhatsApp Intent', timestamp: serverTimestamp(), type: 'Regular Plan' });
-    }
-    setSelectedFund(null);
-  };
-
-  const toggleCompare = (fund) => {
-    if (compareList.find(f => f.id === fund.id)) {
-      setCompareList(compareList.filter(f => f.id !== fund.id));
-    } else {
-      if (compareList.length >= 2) { alert("You can compare max 2 funds."); return; }
-      setCompareList([...compareList, fund]);
-    }
-  };
-
-  return (
-     <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto min-h-screen bg-gray-50">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div><h2 className="text-3xl font-bold text-gray-900">Explore Top Funds</h2><p className="text-gray-500 text-sm mt-1">Curated Regular Plans for long-term wealth.</p></div>
-          <button onClick={handleVoiceCommand} className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition shadow-lg ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}><Mic className="w-5 h-5" />{isListening ? 'Listening...' : 'Voice Search (AI)'}</button>
-        </div>
-
-        {compareList.length > 0 && (
-          <div className="bg-indigo-900 text-white p-4 rounded-xl mb-8 flex justify-between items-center shadow-xl">
-            <div className="flex gap-4">{compareList.map(f => (<div key={f.id} className="flex items-center gap-2 bg-indigo-800 px-3 py-1 rounded-lg"><span className="text-sm font-medium">{f.name.substring(0, 15)}...</span><button onClick={() => toggleCompare(f)}><X className="w-4 h-4 text-indigo-300 hover:text-white"/></button></div>))}</div>
-            {compareList.length === 2 && (<div className="flex items-center gap-4"><div className="text-right text-xs text-indigo-300"><p>Returns: {compareList[0].returns3Y}% vs {compareList[1].returns3Y}%</p><p>Risk: {compareList[0].risk} vs {compareList[1].risk}</p></div><button className="bg-white text-indigo-900 px-4 py-2 rounded-lg font-bold text-sm">Full Compare</button></div>)}
-          </div>
-        )}
-        
-        <div className="grid md:grid-cols-3 gap-6">
-           {filteredFunds.map(fund => (
-              <div key={fund.id} className="bg-white p-6 rounded-xl border border-gray-100 shadow-md hover:shadow-lg transition flex flex-col group">
-                 <div className="flex justify-between items-start mb-4">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md">{fund.category}</span>
-                    <button onClick={() => toggleCompare(fund)} className={`p-1.5 rounded-full transition ${compareList.find(f => f.id === fund.id) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`} title="Compare"><ArrowLeftRight className="w-4 h-4" /></button>
-                 </div>
-                 <h3 className="font-bold text-lg mb-1 leading-tight line-clamp-2 group-hover:text-indigo-600 transition">{fund.name}</h3>
-                 <p className="text-xs text-gray-400 mb-4">{fund.house}</p>
-                 <div className="grid grid-cols-2 gap-4 mb-4 bg-gray-50 p-3 rounded-lg mt-auto">
-                    <div><p className="text-xs text-gray-500">3Y CAGR</p><p className={`text-lg font-bold ${fund.returns3Y > 15 ? 'text-green-600' : 'text-blue-600'}`}>{fund.returns3Y}%</p></div>
-                    <div><p className="text-xs text-gray-500">Risk</p><p className="text-sm font-bold text-gray-700">{fund.risk}</p></div>
-                 </div>
-                 <button onClick={() => { setSelectedFund(fund); setOrderResult(null); setInvestAmount(fund.minInv); }} className="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2">Invest Now <ChevronRight className="w-4 h-4" /></button>
-              </div>
-           ))}
-        </div>
-
-        {selectedFund && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-              <div className="bg-white p-6 rounded-2xl w-full max-w-md relative animate-fade-in-up">
-                 <button onClick={() => setSelectedFund(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X/></button>
-                 {!orderResult ? (
-                    <>
-                       <h3 className="text-xl font-bold mb-1">Invest in {selectedFund.name}</h3>
-                       <p className="text-xs text-gray-500 mb-6 flex items-center gap-1"><Shield className="w-3 h-3 text-green-600"/> Regular Plan • Expert Support Included</p>
-                       <div className="space-y-4 mb-6">
-                         <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Amount (₹)</label><input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} className="w-full p-3 border rounded-lg text-xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none" min={selectedFund.minInv} /></div>
-                         <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Client Code (UCC)</label><input type="text" placeholder="For Existing Clients" value={ucc} onChange={e => setUcc(e.target.value)} className="w-full p-3 border rounded-lg" /></div>
-                       </div>
-                       <div className="space-y-3">
-                         <button onClick={handleWhatsAppInvest} className="w-full bg-green-500 text-white py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition shadow-lg shadow-green-500/20"><MessageCircle className="w-5 h-5" /> Invest via WhatsApp</button>
-                       </div>
-                    </>
-                 ) : ( null )}
-              </div>
-           </div>
-        )}
-     </div>
-  );
-};
-
-// 6. Admin Dashboard (Hidden)
-const AdminDashboard = () => {
-  const [leads, setLeads] = useState([]);
-  const [pin, setPin] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [draftingId, setDraftingId] = useState(null);
-  const [generatedDraft, setGeneratedDraft] = useState(null);
-  const ADMIN_PIN = "1234";
-
-  const handleLogin = (e) => { e.preventDefault(); if (pin === ADMIN_PIN) { setIsAuthenticated(true); fetchLeads(); } else { alert("Invalid PIN"); } };
-  const fetchLeads = () => { setLoading(true); const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), orderBy('timestamp', 'desc')); const unsubscribe = onSnapshot(q, (snapshot) => { setLeads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))); setLoading(false); }); return unsubscribe; };
-  const generateOutreach = async (lead) => {
-    setDraftingId(lead.id);
-    const prompt = `Create a short outreach script. Lead: ${lead.name}, Goal: ${lead.goal}. Output JSON: { "whatsapp": "msg", "email_subject": "sub", "email_body": "body" }`;
-    const result = await callGeminiFlash(prompt, "Sales expert", true);
-    try {
-      if (!result) throw new Error("No result");
-      const cleanJson = result.replace(/```json/g, '').replace(/```/g, '').trim(); 
-      setGeneratedDraft({ id: lead.id, ...JSON.parse(cleanJson) }); 
-    } catch (e) { alert("AI Failed"); } finally { setDraftingId(null); }
-  };
-  const downloadCSV = () => { const headers = "Name,Phone,Goal,Date\n"; const csvContent = leads.map(l => `${l.name},${l.phone},${l.goal},${l.timestamp ? new Date(l.timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}`).join("\n"); const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); const url = URL.createObjectURL(blob); link.setAttribute("href", url); link.setAttribute("download", "leads.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
-
-  if (!isAuthenticated) return <div className="min-h-screen pt-32 flex items-center justify-center bg-gray-900 px-4"><div className="bg-white p-8 rounded-2xl max-w-sm w-full"><h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2><form onSubmit={handleLogin}><input type="password" placeholder="PIN" value={pin} onChange={e => setPin(e.target.value)} className="w-full p-3 border rounded-lg mb-4 text-center" autoFocus/><button className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">Login</button></form></div></div>;
-
-  return (
-    <div className="min-h-screen bg-gray-50 pt-12 pb-12 px-4"><div className="max-w-7xl mx-auto"><div className="flex justify-between items-center mb-8"><h1 className="text-3xl font-bold">Lead Dashboard</h1><button onClick={downloadCSV} className="bg-green-600 text-white px-6 py-2 rounded-xl font-bold">Export CSV</button></div>
-    {generatedDraft && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl max-w-lg w-full p-6 relative"><button onClick={() => setGeneratedDraft(null)} className="absolute top-4 right-4"><X/></button><h3 className="font-bold mb-4">AI Scripts</h3><div className="mb-4"><p className="text-xs font-bold text-green-600">WhatsApp</p><div className="bg-gray-50 p-3 rounded">{generatedDraft.whatsapp}</div></div><div><p className="text-xs font-bold text-blue-600">Email</p><div className="bg-gray-50 p-3 rounded"><span className="font-bold block">Sub: {generatedDraft.email_subject}</span>{generatedDraft.email_body}</div></div></div></div>}
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden"><table className="w-full text-left"><thead className="bg-gray-100"><tr><th className="p-4">Date</th><th className="p-4">Name</th><th className="p-4">Phone</th><th className="p-4">Goal</th><th className="p-4 text-right">AI</th></tr></thead><tbody>{leads.map(l => (<tr key={l.id} className="hover:bg-gray-50"><td className="p-4 text-sm">{l.timestamp ? new Date(l.timestamp.seconds * 1000).toLocaleDateString() : '-'}</td><td className="p-4 font-bold">{l.name}</td><td className="p-4 text-indigo-600">{l.phone}</td><td className="p-4"><span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold">{l.goal}</span></td><td className="p-4 text-right"><button onClick={() => generateOutreach(l)} className="text-purple-600 hover:bg-purple-50 p-2 rounded"><Sparkles className="w-4 h-4"/></button></td></tr>))}</tbody></table></div></div></div>
-  );
-};
-
-// 7. Live Dashboard
+// --- 2. DASHBOARD ---
 const Dashboard = ({ user }) => {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({ invested: 0, current: 0 });
-  const [aiInsight, setAiInsight] = useState(null);
+  const [goals, setGoals] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -500,33 +177,267 @@ const Dashboard = ({ user }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setOrders(ordersData);
-      let invested = 0, current = 0;
-      ordersData.forEach(o => { if (o.status !== 'Failed') { invested += o.amount; current += o.amount * 1.08; } });
+      
+      let invested = 0;
+      let current = 0;
+      const goalMap = {};
+
+      ordersData.forEach(o => {
+        if (o.status !== 'Failed') {
+          invested += o.amount;
+          current += o.amount * 1.12; 
+          const goal = o.goal || 'General Wealth';
+          if (!goalMap[goal]) goalMap[goal] = 0;
+          goalMap[goal] += o.amount;
+        }
+      });
+      
       setStats({ invested, current });
+      setGoals(Object.entries(goalMap).map(([name, value]) => ({ name, value })));
     });
     return () => unsubscribe();
   }, [user]);
 
-  const generatePortfolioInsight = async () => {
-    const summary = orders.map(o => `${o.fundName}: ₹${o.amount}`).join(', ');
-    const result = await callGeminiFlash(`Analyze portfolio: [${summary}]. Brief advice.`);
-    setAiInsight(result);
-  };
+  const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899'];
 
   return (
     <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto min-h-screen">
-      <h1 className="text-3xl font-bold mb-8">My Portfolio</h1>
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg"><p className="text-indigo-200 text-sm">Current Value</p><h2 className="text-4xl font-bold">₹ {Math.round(stats.current).toLocaleString()}</h2></div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><p className="text-gray-500 text-sm">Invested</p><h2 className="text-3xl font-bold">₹ {stats.invested.toLocaleString()}</h2></div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">{!aiInsight ? <button onClick={generatePortfolioInsight} className="text-indigo-600 font-bold flex items-center gap-2 justify-center"><Sparkles className="w-5 h-5"/> AI Insight</button> : <div className="text-sm h-24 overflow-y-auto">{aiInsight}</div>}</div>
+      <div className="flex justify-between items-end mb-8">
+        <div><h1 className="text-3xl font-bold text-gray-900">Hello, {user.displayName?.split(' ')[0]} 👋</h1><p className="text-gray-500">Your financial freedom tracker</p></div>
+        <div className="text-right hidden md:block"><p className="text-sm text-gray-500">XIRR (Returns)</p><p className="text-2xl font-bold text-green-600">+14.2%</p></div>
       </div>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"><h3 className="font-bold mb-4">Transactions</h3>{orders.map(o => (<div key={o.id} className="flex justify-between border-b border-gray-50 pb-4 mb-4"><div><h4 className="font-bold text-sm">{o.fundName}</h4><p className="text-xs text-gray-400">{new Date(o.timestamp?.seconds * 1000).toLocaleDateString()}</p></div><div className="text-right"><p className="font-bold">₹{o.amount}</p><span className="text-xs text-green-600">{o.status}</span></div></div>))}</div>
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-6 rounded-2xl shadow-xl shadow-indigo-500/20 relative overflow-hidden col-span-2">
+          <div className="relative z-10 flex justify-between items-end h-full">
+            <div><p className="text-indigo-100 text-sm mb-1 font-medium">Total Portfolio Value</p><h2 className="text-5xl font-bold tracking-tight">₹ {Math.round(stats.current).toLocaleString()}</h2><div className="mt-4 flex gap-4 text-sm"><div><span className="opacity-70 block text-xs">Invested</span><span className="font-bold">₹ {Math.round(stats.invested).toLocaleString()}</span></div><div><span className="opacity-70 block text-xs">Total Gain</span><span className="font-bold text-green-300">+₹ {Math.round(stats.current - stats.invested).toLocaleString()}</span></div></div></div>
+            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-md"><TrendingUp className="w-8 h-8 text-white" /></div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Target className="w-5 h-5 text-red-500" /> Goal Progress</h3>
+          <div className="flex-1 flex items-center justify-center">
+            {goals.length > 0 ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={goals} layout="vertical">
+                  <XAxis type="number" hide /><YAxis dataKey="name" type="category" width={80} tick={{fontSize: 12}} /><Tooltip cursor={{fill: 'transparent'}} /><Bar dataKey="value" radius={[0, 4, 4, 0]}>{goals.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (<div className="text-center text-gray-400 text-sm"><Target className="w-8 h-8 mx-auto mb-2 opacity-50" /><p>No goals set yet.</p></div>)}
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center"><h3 className="font-bold text-gray-900">Your Holdings</h3><button className="text-indigo-600 text-sm font-bold hover:underline">Download Statement</button></div>
+        {orders.length > 0 ? (<div className="divide-y divide-gray-100">{orders.map(order => (<div key={order.id} className="p-5 flex flex-col md:flex-row justify-between items-center hover:bg-gray-50 transition"><div className="flex items-center gap-4 w-full md:w-auto mb-4 md:mb-0"><div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold">{order.fundName[0]}</div><div><h4 className="font-bold text-gray-900">{order.fundName}</h4><div className="flex items-center gap-3 text-xs text-gray-500 mt-1"><span className="bg-gray-100 px-2 py-0.5 rounded">Regular</span><span>•</span><span>{new Date(order.timestamp?.seconds * 1000).toLocaleDateString()}</span></div></div></div><div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end"><div className="text-right"><p className="text-xs text-gray-400">Invested</p><p className="font-bold text-gray-900">₹{order.amount.toLocaleString()}</p></div><div className="text-right"><p className="text-xs text-gray-400">Current</p><p className="font-bold text-green-600">₹{Math.round(order.amount * 1.12).toLocaleString()}</p></div><div className="text-right"><span className={`text-xs px-2 py-1 rounded-full font-bold ${order.status === 'Placed' || order.status === 'WhatsApp Intent' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status === 'WhatsApp Intent' ? 'Processing' : order.status}</span></div></div></div>))}</div>) : (<div className="p-12 text-center"><Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" /><p className="text-gray-500">You haven't invested yet.</p><p className="text-sm text-gray-400 mt-1">Start your SIP today via WhatsApp!</p></div>)}
+      </div>
     </div>
   );
 };
 
-// 8. Standard Page Components (Restored)
+// --- 3. FUND EXPLORER ---
+const FundExplorer = ({ user, setView, setShowLogin }) => {
+  const [funds, setFunds] = useState([]);
+  const [selectedFund, setSelectedFund] = useState(null);
+  const [investAmount, setInvestAmount] = useState('');
+  const [selectedGoal, setSelectedGoal] = useState('General Wealth');
+  
+  useEffect(() => {
+    setFunds(TRACKED_FUNDS.map(f => ({ ...f, nav: 100 + Math.random()*50, returns3Y: (12 + Math.random()*10).toFixed(2) })));
+  }, []);
+
+  const handleWhatsAppInvest = async () => {
+    if (!user) { setShowLogin(true); return; }
+    const message = `*Investment Request*\n\nHi IndiBucks,\nI want to invest in: *${selectedFund.name}*\nAmount: *₹${investAmount}*\nGoal: ${selectedGoal}\n\nPlease send payment link.`;
+    const url = `https://wa.me/919810793780?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'orders'), { fundId: selectedFund.code, fundName: selectedFund.name, amount: parseFloat(investAmount), goal: selectedGoal, status: 'WhatsApp Intent', timestamp: serverTimestamp(), type: 'Regular Plan' });
+      alert("Request logged! Please complete payment on WhatsApp.");
+      setSelectedFund(null);
+    } catch (e) { console.error(e); }
+  };
+
+  return (
+    <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto min-h-screen bg-gray-50">
+      <div className="mb-8"><h2 className="text-3xl font-bold text-gray-900">Invest in Top Funds</h2><p className="text-gray-500">Zero paperwork. Concierge execution.</p></div>
+      <div className="grid md:grid-cols-3 gap-6">
+        {funds.map(fund => (
+          <div key={fund.code} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition">
+            <div className="flex justify-between mb-4"><span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold uppercase">{fund.category}</span><span className="text-xs font-bold text-green-600">★ {fund.risk} Risk</span></div>
+            <h3 className="font-bold text-lg mb-1 line-clamp-2">{fund.name}</h3>
+            <div className="flex justify-between mt-4 mb-6 text-sm"><div><p className="text-gray-400">3Y Returns</p><p className="font-bold text-green-600">{fund.returns3Y}%</p></div><div className="text-right"><p className="text-gray-400">Min Inv</p><p className="font-bold">₹{fund.minInv}</p></div></div>
+            <button onClick={() => { setSelectedFund(fund); setInvestAmount(fund.minInv); }} className="w-full bg-gray-900 text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition">Invest Now</button>
+          </div>
+        ))}
+      </div>
+      {selectedFund && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-md relative animate-fade-in-up">
+            <button onClick={() => setSelectedFund(null)} className="absolute top-4 right-4"><X /></button>
+            <h3 className="text-xl font-bold mb-4">Invest in {selectedFund.name}</h3>
+            <div className="space-y-4 mb-6">
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Amount (₹)</label><input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} className="w-full p-3 border rounded-lg font-bold text-xl" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tag this Goal</label><select value={selectedGoal} onChange={e => setSelectedGoal(e.target.value)} className="w-full p-3 border rounded-lg bg-white"><option>General Wealth</option><option>Retirement</option><option>New Home</option><option>Car / Bike</option><option>Education</option></select></div>
+            </div>
+            <button onClick={handleWhatsAppInvest} className="w-full bg-green-500 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition shadow-lg shadow-green-500/20"><MessageCircle className="w-6 h-6" /> Invest via WhatsApp</button>
+            <p className="text-center text-xs text-gray-400 mt-4">Safe & Secure. Human verified execution.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- 4. ADMIN DASHBOARD ---
+const AdminDashboard = () => {
+  const [leads, setLeads] = useState([]);
+  const [pin, setPin] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [generatedDraft, setGeneratedDraft] = useState(null);
+  const ADMIN_PIN = "1234";
+
+  const handleLogin = (e) => { e.preventDefault(); if (pin === ADMIN_PIN) setIsAuthenticated(true); else alert("Invalid PIN"); };
+  useEffect(() => { if (isAuthenticated) { const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), orderBy('timestamp', 'desc')); return onSnapshot(q, s => setLeads(s.docs.map(d => ({id: d.id, ...d.data()})))); } }, [isAuthenticated]);
+  const generateOutreach = async (lead) => { const prompt = `Create outreach. Name: ${lead.name}, Goal: ${lead.goal}. JSON: { "whatsapp": "msg", "email_subject": "sub", "email_body": "body" }`; const res = await callGeminiFlash(prompt, "Sales", true); if(res) setGeneratedDraft(JSON.parse(res.replace(/```json|```/g, ''))); };
+
+  if (!isAuthenticated) return <div className="min-h-screen pt-32 flex justify-center bg-gray-900"><form onSubmit={handleLogin} className="bg-white p-8 rounded-xl max-w-sm"><h2 className="text-2xl font-bold mb-4">Admin</h2><input type="password" value={pin} onChange={e => setPin(e.target.value)} className="w-full border p-2 mb-4" placeholder="PIN"/><button className="bg-indigo-600 text-white w-full py-2 rounded">Login</button></form></div>;
+
+  return (
+    <div className="pt-24 px-4 max-w-7xl mx-auto"><h1 className="text-2xl font-bold mb-6">Leads</h1>
+      {generatedDraft && <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4"><div className="bg-white p-6 rounded-xl w-full max-w-lg relative"><button onClick={() => setGeneratedDraft(null)} className="absolute top-4 right-4"><X/></button><h3 className="font-bold mb-4">AI Script</h3><div className="mb-4 font-mono text-sm bg-gray-100 p-2">{generatedDraft.whatsapp}</div><div className="font-mono text-sm bg-gray-100 p-2">{generatedDraft.email_body}</div></div></div>}
+      <div className="bg-white rounded-xl shadow overflow-hidden"><table className="w-full text-left"><thead className="bg-gray-50"><tr><th className="p-4">Name</th><th className="p-4">Phone</th><th className="p-4">Goal</th><th className="p-4">Action</th></tr></thead><tbody>{leads.map(l => (<tr key={l.id} className="border-t"><td className="p-4 font-bold">{l.name}</td><td className="p-4">{l.phone}</td><td className="p-4">{l.goal}</td><td className="p-4"><button onClick={() => generateOutreach(l)} className="text-indigo-600"><Sparkles className="w-4 h-4"/></button></td></tr>))}</tbody></table></div>
+    </div>
+  );
+};
+
+// --- 5. AI ADVISOR ---
+const AIAdvisor = () => {
+  const [messages, setMessages] = useState([{role: 'assistant', text: "Hello! I'm IndiGenie. Ask me about funds or goals."}]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false); // Added typing state
+  
+  const handleSend = async () => { 
+    if(!input.trim()) return; 
+    const t = input; 
+    setMessages(p => [...p, {role:'user', text:t}]); 
+    setInput(''); 
+    setIsTyping(true); // Start typing
+    
+    // Improved System Prompt for Concise Points
+    const systemPrompt = "You are IndiGenie, an expert Mutual Fund Distributor. Answer the user's financial query in short, punchy bullet points (max 3-4). Use emojis to make it friendly. Always favor 'Regular Plans' for their advisory benefits. Do not write long paragraphs.";
+    
+    const res = await callGeminiFlash(t, systemPrompt); 
+    
+    setMessages(p => [...p, {role:'assistant', text: res}]); 
+    setIsTyping(false); // Stop typing
+  };
+
+  return (
+    <div className="pt-24 pb-12 px-4 max-w-4xl mx-auto h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden">
+        <div className="bg-indigo-600 p-4 text-white font-bold flex justify-between items-center">
+          <span>IndiGenie AI</span>
+          <RefreshCw className="w-4 h-4 opacity-70 cursor-pointer hover:rotate-180 transition" onClick={() => setMessages([])}/>
+        </div>
+        <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+          {messages.map((m,i) => (
+            <div key={i} className={`flex mb-4 ${m.role==='user'?'justify-end':'justify-start'}`}>
+              <div className={`p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${m.role==='user'?'bg-indigo-600 text-white rounded-br-none':'bg-white border border-gray-100 text-gray-800 rounded-bl-none'}`}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="flex justify-start mb-4">
+              <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-bl-none shadow-sm flex gap-2 items-center">
+                <span className="text-xs text-gray-400">Genie is thinking</span>
+                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75"></div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="p-4 border-t bg-white flex gap-2">
+          <input 
+            value={input} 
+            onChange={e=>setInput(e.target.value)} 
+            className="flex-1 border border-gray-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+            placeholder="Ask specific questions (e.g. 'Best Tax Saver?')" 
+            onKeyPress={e=>e.key==='Enter'&&handleSend()}
+          />
+          <button onClick={handleSend} disabled={isTyping} className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50">
+            <ArrowUpRight className="w-5 h-5"/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- 6. STATEMENT ANALYZER ---
+const StatementAnalyzer = () => {
+  const [analysis, setAnalysis] = useState('');
+  const handleFile = async (e) => { const f = e.target.files[0]; if(f) { const r = new FileReader(); r.onload = async () => { const res = await callGeminiVision("Analyze portfolio image. Suggest Regular plans.", r.result.split(',')[1]); setAnalysis(res); }; r.readAsDataURL(f); } };
+  return (
+    <div className="pt-24 px-4 max-w-4xl mx-auto text-center">
+      <div className="bg-white p-12 rounded-3xl shadow-xl border-dashed border-2 border-indigo-200">
+        <Camera className="w-16 h-16 mx-auto text-indigo-200 mb-4"/><h2 className="text-2xl font-bold mb-4">Upload Portfolio Statement</h2>
+        <input type="file" onChange={handleFile} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+        {analysis && <div className="mt-8 text-left bg-indigo-50 p-6 rounded-xl">{analysis}</div>}
+      </div>
+    </div>
+  );
+};
+
+// --- NAVBAR ---
+const Navbar = ({ user, setView, isMenuOpen, setIsMenuOpen, onLoginClick, isAdminMode }) => {
+  if (isAdminMode) return null;
+  return (
+    <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          <div className="flex items-center cursor-pointer group" onClick={() => setView('home')}>
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-lg shadow-indigo-600/20 group-hover:scale-105 transition">
+              <TrendingUp className="text-white w-6 h-6" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900 tracking-tight">IndiBucks<span className="text-indigo-600">Pro</span></span>
+          </div>
+          <div className="hidden md:flex items-center space-x-8">
+            <button onClick={() => setView('home')} className="text-gray-600 hover:text-indigo-600 font-medium">Home</button>
+            <button onClick={() => setView('funds')} className="text-gray-600 hover:text-indigo-600 font-medium">Invest</button>
+            <button onClick={() => setView('advisor')} className="text-gray-600 hover:text-indigo-600 font-medium">AI Advisor</button>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <button onClick={() => setView('dashboard')} className="text-gray-900 font-medium hover:text-indigo-600 transition">Dashboard</button>
+                <button onClick={() => signOut(auth)} className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-200 transition">Sign Out</button>
+                {user.photoURL && <img src={user.photoURL} alt="Profile" className="w-8 h-8 rounded-full border border-gray-200" />}
+              </div>
+            ) : (
+              <button 
+                onClick={onLoginClick} 
+                className="bg-indigo-600 text-white px-7 py-2.5 rounded-full text-sm font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-600/20"
+              >
+                Login / Sign Up
+              </button>
+            )}
+          </div>
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-600 p-2">{isMenuOpen ? <X /> : <Menu />}</button>
+          </div>
+        </div>
+      </div>
+      {isMenuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 p-4 space-y-4 shadow-xl">
+          <button onClick={() => { setView('home'); setIsMenuOpen(false); }} className="block w-full text-left font-medium">Home</button>
+          <button onClick={() => { setView('funds'); setIsMenuOpen(false); }} className="block w-full text-left font-medium">Invest</button>
+          {!user && <button onClick={() => { onLoginClick(); setIsMenuOpen(false); }} className="block w-full text-left font-bold text-indigo-600">Login</button>}
+        </div>
+      )}
+    </nav>
+  );
+};
+
+// --- Standard Page Components ---
 const Services = () => (
   <div className="py-20 bg-gray-50">
     <div className="max-w-7xl mx-auto px-4 text-center">
@@ -563,82 +474,15 @@ const Footer = () => (
   </footer>
 );
 
-const Hero = ({ setView }) => (
-  <div className="pt-32 pb-20 px-4 max-w-7xl mx-auto">
-    <div className="grid md:grid-cols-12 gap-12 items-center">
-      <div className="md:col-span-7 space-y-8 animate-fade-in-up">
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-50 text-indigo-700 text-sm font-bold border border-indigo-100"><span className="flex h-2 w-2 rounded-full bg-indigo-600 mr-2 animate-pulse"></span> WhatsApp Investing Live 🚀</div>
-        <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight">Invest with <br/><span className="text-indigo-600">Expertise.</span></h1>
-        <p className="text-xl text-gray-600 max-w-xl">Don't rely on algorithms alone. Get a dedicated Relationship Manager and AI-powered insights.</p>
-        <div className="flex gap-4">
-          <button onClick={() => setView('funds')} className="px-8 py-4 bg-gray-900 text-white rounded-xl font-bold">Explore Funds</button>
-          <button onClick={() => setView('advisor')} className="px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-bold">AI Advisor</button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 pt-8 border-t border-gray-100">
-          <div><h4 className="text-3xl font-bold text-gray-900">₹250Cr+</h4><p className="text-gray-500 text-sm">Assets Managed</p></div>
-          <div><h4 className="text-3xl font-bold text-gray-900">20+</h4><p className="text-gray-500 text-sm">Years Experience</p></div>
-          <div><h4 className="text-3xl font-bold text-gray-900">Zero</h4><p className="text-gray-500 text-sm">Hidden Fees</p></div>
-        </div>
-      </div>
-      <div className="md:col-span-5 relative"><LeadForm /></div>
-    </div>
-  </div>
-);
-
-const Navbar = ({ user, setView, isMenuOpen, setIsMenuOpen, isAdminMode }) => {
-  if (isAdminMode) return null;
-  return (
-    <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <div className="flex items-center cursor-pointer group" onClick={() => setView('home')}>
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-lg shadow-indigo-600/20 group-hover:scale-105 transition">
-              <TrendingUp className="text-white w-6 h-6" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900 tracking-tight">IndiBucks<span className="text-indigo-600">.ai</span></span>
-          </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <button onClick={() => setView('home')} className="text-gray-600 hover:text-indigo-600 font-medium">Home</button>
-            <button onClick={() => setView('funds')} className="text-gray-600 hover:text-indigo-600 font-medium">Invest</button>
-            <button onClick={() => setView('analyzer')} className="text-gray-600 hover:text-indigo-600 font-medium">Analyzer</button>
-            <button onClick={() => setView('advisor')} className="text-gray-600 hover:text-indigo-600 font-medium">AI Advisor</button>
-            {user ? (
-              <div className="flex items-center gap-4">
-                <button onClick={() => setView('dashboard')} className="text-gray-900 font-medium">Dashboard</button>
-                <button onClick={() => signOut(auth)} className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-200">Sign Out</button>
-              </div>
-            ) : (
-              <button onClick={() => signInAnonymously(auth)} className="bg-indigo-600 text-white px-7 py-2.5 rounded-full text-sm font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">Get Started</button>
-            )}
-          </div>
-          <div className="md:hidden">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-600 p-2">{isMenuOpen ? <X /> : <Menu />}</button>
-          </div>
-        </div>
-      </div>
-      {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 p-4 space-y-4 shadow-xl">
-          <button onClick={() => { setView('home'); setIsMenuOpen(false); }} className="block w-full text-left py-2 font-medium">Home</button>
-          <button onClick={() => { setView('funds'); setIsMenuOpen(false); }} className="block w-full text-left py-2 font-medium">Funds</button>
-        </div>
-      )}
-    </nav>
-  );
-};
-
+// --- MAIN APP ---
 const App = () => {
   const [view, setView] = useState('home');
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
-    const handleHashChange = () => {
-      if (window.location.hash === '#admin') {
-        setView('admin');
-      } else if (view === 'admin' && window.location.hash !== '#admin') {
-        setView('home');
-      }
-    };
+    const handleHashChange = () => { if (window.location.hash === '#admin') setView('admin'); };
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => setUser(currentUser));
@@ -646,19 +490,46 @@ const App = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-800 selection:bg-indigo-100">
-      <Navbar user={user} setView={setView} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} isAdminMode={view === 'admin'} />
+    <div className="min-h-screen bg-white font-sans text-slate-800">
+      <Navbar user={user} setView={setView} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} onLoginClick={() => setShowLogin(true)} isAdminMode={view === 'admin'} />
+      
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+
       <main>
-        {view === 'home' && <><Hero setView={setView} /><div className="py-12 bg-gray-50"><div className="max-w-4xl mx-auto px-4"><SIPCalculator /></div></div><Services /><Testimonials /><Footer /></>}
-        {view === 'funds' && <FundExplorer user={user} setView={setView} />}
-        {view === 'analyzer' && <StatementAnalyzer />}
-        {view === 'advisor' && <AIAdvisor user={user} />}
+        {view === 'home' && (
+          <div className="pt-32 pb-20 px-4 max-w-7xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-50 text-green-700 text-sm font-bold border border-green-100 mb-6">
+                <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp Investing Now Live
+              </div>
+              <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6">
+                Invest Smart. <br/><span className="text-indigo-600">Live Free.</span>
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                The only platform that combines AI intelligence with human expert validation. 
+                Invest via WhatsApp, track via Dashboard.
+              </p>
+              <div className="flex justify-center gap-4">
+                <button onClick={() => setView('funds')} className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-xl hover:bg-indigo-700 transition">Start Investing</button>
+                <button onClick={() => setView('calculators')} className="px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition">Calculators</button>
+              </div>
+            </div>
+            <div className="py-12"><SIPCalculator /></div>
+            <Services />
+            <Testimonials />
+            <Footer />
+          </div>
+        )}
+        
+        {view === 'funds' && <FundExplorer user={user} setView={setView} setShowLogin={setShowLogin} />}
         {view === 'dashboard' && <Dashboard user={user} />}
+        {view === 'calculators' && <div className="pt-32 pb-12 px-4 max-w-4xl mx-auto"><SIPCalculator /></div>}
         {view === 'admin' && <AdminDashboard />}
+        {view === 'advisor' && <AIAdvisor />}
+        {view === 'analyzer' && <StatementAnalyzer />}
       </main>
     </div>
   );
 };
 
 export default App;
-
