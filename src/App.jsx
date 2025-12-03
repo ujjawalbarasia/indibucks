@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, where } from 'firebase/firestore';
 import { 
   TrendingUp, Shield, Zap, User, Menu, X, ChevronRight, Star, 
@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 
 // --- Firebase Configuration ---
+
 const firebaseConfig = {
   apiKey: "AIzaSyDALtiUuYzJDh3F5hQ5mmqGmxspzH3K2sM",
   authDomain: "indibucks-cd137.firebaseapp.com",
@@ -22,11 +23,11 @@ const firebaseConfig = {
   appId: "1:1051808853082:web:543ba0b40d7fb778e07c63",
   measurementId: "G-7VE27ZDW86"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "indibucks-cd137";
-
 const googleProvider = new GoogleAuthProvider();
 
 const apiKey = ""; 
@@ -108,7 +109,22 @@ const LoginModal = ({ onClose }) => {
       onClose();
     } catch (error) {
       console.error("Login failed", error);
-      alert("Login failed. Please try again.");
+      if (error.code === 'auth/unauthorized-domain') {
+        alert("Error: This domain is not authorized. Go to Firebase Console > Authentication > Settings > Authorized Domains.");
+      } else if (error.code === 'auth/configuration-not-found') {
+        alert("Error: Google Sign-In is not enabled in Firebase Console.");
+      } else {
+        alert(`Login Error: ${error.message}`);
+      }
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      await signInAnonymously(auth);
+      onClose();
+    } catch (error) {
+      alert("Guest login failed. Check Firebase Config.");
     }
   };
 
@@ -121,10 +137,25 @@ const LoginModal = ({ onClose }) => {
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
         <p className="text-gray-500 mb-8">Access your portfolio and goals securely.</p>
-        <button onClick={handleGoogleLogin} className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-50 transition shadow-sm">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-          Continue with Google
-        </button>
+        
+        <div className="space-y-3">
+          <button 
+            onClick={handleGoogleLogin}
+            className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-50 transition shadow-sm"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+            Continue with Google
+          </button>
+
+          <button 
+            onClick={handleGuestLogin}
+            className="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition"
+          >
+            <User className="w-5 h-5" />
+            Continue as Guest
+          </button>
+        </div>
+        
         <p className="text-xs text-gray-400 mt-6">By continuing, you agree to our Terms & Privacy Policy.</p>
       </div>
     </div>
