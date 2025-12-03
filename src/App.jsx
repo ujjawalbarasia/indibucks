@@ -13,11 +13,19 @@ import {
 } from 'recharts';
 
 // --- Firebase Configuration ---
-const firebaseConfig = JSON.parse(__firebase_config);
+const firebaseConfig = {
+  apiKey: "AIzaSyDALtiUuYzJDh3F5hQ5mmqGmxspzH3K2sM",
+  authDomain: "indibucks-cd137.firebaseapp.com",
+  projectId: "indibucks-cd137",
+  storageBucket: "indibucks-cd137.firebasestorage.app",
+  messagingSenderId: "1051808853082",
+  appId: "1:1051808853082:web:543ba0b40d7fb778e07c63",
+  measurementId: "G-7VE27ZDW86"
+};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = "indibucks-cd137";
 
 const apiKey = ""; 
 
@@ -653,3 +661,4 @@ const App = () => {
 };
 
 export default App;
+
