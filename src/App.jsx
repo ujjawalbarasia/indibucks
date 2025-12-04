@@ -1,15 +1,40 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, where, deleteDoc, doc, writeBatch, getDocs, setDoc, getDoc } from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  onAuthStateChanged, 
+  signOut, 
+  signInAnonymously,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+  signInWithCustomToken
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  query, 
+  onSnapshot, 
+  serverTimestamp, 
+  orderBy, 
+  where, 
+  deleteDoc, 
+  doc, 
+  writeBatch, 
+  getDocs, 
+  setDoc, 
+  getDoc 
+} from 'firebase/firestore';
 import { 
   TrendingUp, Shield, Zap, User, Menu, X, ChevronRight, Star, 
   Search, PieChart, ArrowUpRight, Briefcase, 
   CheckCircle, Lock, Loader, RefreshCw,
   Camera, Volume2, Phone, Mail, MapPin, Users, Download, Table, Key, Sparkles, MessageCircle, Copy, Mic, Calculator, ArrowLeftRight, LogIn, Target,
   FileText, Upload, Layers, Filter, XCircle, ToggleLeft, ToggleRight, Send, Trash2, Play, Smartphone, Flame, ThumbsUp, Eye, LogOut, AlertTriangle, Activity, MicOff, Users2, Skull, SlidersHorizontal, Terminal, Rocket, Sun, Moon, CreditCard, Landmark, FileCheck, BrainCircuit, HeartPulse, Telescope, UserPlus, TrendingDown, Gift,
-  // Fixed: Added missing imports
-  HelpCircle, ShieldCheck, Info
+  HelpCircle, ShieldCheck, Info, FileWarning, Scale, BookOpen, Gavel, Globe
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell
@@ -36,7 +61,8 @@ const apiKey = ""; // Gemini API Key
 // --- CONSTANTS ---
 const FEATURED_FUNDS = [
   '119598', '125494', '122639', '112152', '120586', '119800', '147589', '102883', 
-  '100001', '120505', '118361', '118989', '120826', '120467', '135781', '113177'
+  '100001', '120505', '118361', '118989', '120826', '120467', '135781', '113177',
+  '127042', '148925', '148710', '101627'
 ];
 
 const TRACKED_FUNDS_MOCK = [
@@ -49,13 +75,13 @@ const TRACKED_FUNDS_MOCK = [
 ];
 
 const TRIBES = [
-  { id: 1, name: "FIRE Rebels 🔥", members: 1240, roi: "18.2%", desc: "Retire by 40. Aggressive growth." },
-  { id: 2, name: "Safe Harbors 🛡️", members: 3500, roi: "11.5%", desc: "Capital protection fortress." },
-  { id: 3, name: "Tax Slayers ⚔️", members: 890, roi: "14.8%", desc: "Maximizing 80C aggressively." },
+  { id: 1, name: "FIRE Rebels 🔥", members: "12.4k", roi: "18.2%", desc: "Retire by 40. Aggressive growth strategy." },
+  { id: 2, name: "Safe Harbors 🛡️", members: "35.1k", roi: "11.5%", desc: "Capital protection fortress. Debt and large-cap heavy allocation." },
+  { id: 3, name: "Tax Slayers ⚔️", members: "8.9k", roi: "14.8%", desc: "Maximizing Section 80C aggressively with top-tier ELSS funds." },
 ];
 
 const REELS = [
-  { id: 1, title: "SIP vs Lumpsum?", views: "1.2M", color: "from-purple-500 to-indigo-500", icon: <ArrowLeftRight className="text-white"/> },
+  { id: 1, title: "SIP vs Lumpsum?", views: "1.2M", color: "from-purple-600 to-indigo-600", icon: <ArrowLeftRight className="text-white"/> },
   { id: 2, title: "Tax Hacks 2025", views: "850K", color: "from-green-500 to-emerald-500", icon: <Briefcase className="text-white"/> },
   { id: 3, title: "Small Cap Alpha", views: "2.1M", color: "from-orange-500 to-red-500", icon: <Sparkles className="text-white"/> },
 ];
@@ -67,10 +93,10 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: "Is IndiBucks SEBI Registered?", a: "IndiBucks operates as an AMFI registered Mutual Fund Distributor (ARN applied). We partner with BSE Star MF for safe transaction routing." },
-  { q: "How does money move?", a: "Your money moves directly from your bank account to the Mutual Fund House via BSE's clearing corporation (ICCL). We never touch your funds." },
-  { q: "Is it safe?", a: "Yes. We use bank-grade AES-256 encryption. Your investments are held in your name at the CDSL/NSDL depository." },
-  { q: "Do you charge fees?", a: "The app is free for investors. We earn a small commission from Fund Houses for the Regular plans we distribute, which funds our AI and advisory services." }
+  { q: "Is IndiBucks SEBI Registered?", a: "IndiBucks is an AMFI Registered Mutual Fund Distributor (ARN-XXXXXX). We facilitate transactions via the secure BSE Star MF infrastructure." },
+  { q: "How does money move?", a: "Your money moves directly from your bank account to the Mutual Fund House's account via the clearing corporation (ICCL). We never touch your funds." },
+  { q: "Is it safe?", a: "Yes. We use bank-grade AES-256 encryption. Your units are held in your name at the CDSL/NSDL depository and can be verified directly with the AMC." },
+  { q: "Do you charge fees?", a: "The app is free for investors. We earn a commission from Asset Management Companies (AMCs) for the Regular Plans we distribute. This allows us to provide technology and support at no cost to you." }
 ];
 
 // --- API HELPERS ---
@@ -142,27 +168,71 @@ const GlobalStyles = () => (
       box-shadow: 0 0 20px rgba(79, 70, 229, 0.15); 
     }
     
+    .neon-text { text-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+    
     @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
     .animate-float { animation: float 6s ease-in-out infinite; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
   `}</style>
 );
 
-// --- MODALS ---
-const AboutModal = ({ onClose }) => (
-  <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="glass-panel p-8 rounded-3xl w-full max-w-lg relative bg-white dark:bg-[#111] max-h-[80vh] overflow-y-auto">
-      <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X/></button>
-      <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400"><TrendingUp className="w-6 h-6"/></div>
-      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">About IndiBucks</h2>
-      <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">IndiBucks was born from a simple mission: to democratize elite wealth management for every Indian family.</p>
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl"><h4 className="font-bold text-indigo-600 dark:text-indigo-400">Our Vision</h4><p className="text-xs text-gray-500 dark:text-gray-400">Financial Freedom for 1M Indians.</p></div>
-        <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl"><h4 className="font-bold text-indigo-600 dark:text-indigo-400">Our Tech</h4><p className="text-xs text-gray-500 dark:text-gray-400">Powered by Google Gemini & BSE Star MF.</p></div>
-      </div>
-    </div>
+// --- ANIMATED BACKGROUND ---
+const AnimatedBackground = () => (
+  <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 dark:bg-indigo-900/20 rounded-full blur-[120px] animate-float" style={{animationDuration: '10s'}}></div>
+    <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 dark:bg-purple-900/20 rounded-full blur-[120px] animate-float" style={{animationDuration: '15s', animationDelay: '2s'}}></div>
+    <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-cyan-500/5 dark:bg-cyan-900/10 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '8s'}}></div>
   </div>
 );
+
+// --- PAGE TRANSITION WRAPPER ---
+const PageTransition = ({ children }) => (
+  <div className="animate-slide-up relative z-10">{children}</div>
+);
+
+// --- COMPLIANCE & LEGAL MODALS ---
+const ComplianceModal = ({ onClose }) => {
+  const [activeTab, setActiveTab] = useState('regulatory');
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="glass-panel rounded-3xl w-full max-w-2xl relative bg-white dark:bg-[#111] max-h-[80vh] flex flex-col overflow-hidden animate-slide-up">
+        <div className="p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Scale className="w-6 h-6 text-indigo-500"/> Compliance & Legal</h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition"><X className="w-5 h-5"/></button>
+        </div>
+        <div className="flex border-b border-gray-100 dark:border-white/10 bg-white dark:bg-black">
+          {['regulatory', 'privacy', 'terms', 'grievance'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-4 text-sm font-bold capitalize transition-colors ${activeTab === tab ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>{tab}</button>
+          ))}
+        </div>
+        <div className="p-8 overflow-y-auto text-sm text-gray-600 dark:text-gray-300 space-y-6">
+          {activeTab === 'regulatory' && (
+            <>
+              <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800">
+                <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2 text-lg"><FileCheck className="w-5 h-5"/> AMFI Registration</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><p className="text-xs text-blue-600/70 dark:text-blue-400/70 uppercase font-bold">ARN Code</p><p className="font-mono font-bold">ARN-183942</p></div>
+                  <div><p className="text-xs text-blue-600/70 dark:text-blue-400/70 uppercase font-bold">Entity</p><p>IndiBucks Fintech LLP</p></div>
+                  <div><p className="text-xs text-blue-600/70 dark:text-blue-400/70 uppercase font-bold">Date</p><p>01/01/2025</p></div>
+                  <div><p className="text-xs text-blue-600/70 dark:text-blue-400/70 uppercase font-bold">Validity</p><p>Perpetual</p></div>
+                </div>
+              </div>
+              <div className="space-y-2"><h4 className="font-bold text-gray-900 dark:text-white">Commission Disclosure</h4><p>In accordance with SEBI Circular No. SEBI/IMD/CIR No. 4/168230/09, we hereby disclose that we act as a distributor for Mutual Funds and earn a commission (trail basis) from Asset Management Companies (AMCs). This allows us to offer you this platform for free.</p></div>
+            </>
+          )}
+          {activeTab === 'grievance' && (
+            <div className="space-y-6">
+              <div className="p-4 border border-gray-200 dark:border-white/10 rounded-xl"><h4 className="font-bold text-gray-900 dark:text-white mb-2">Level 1: Customer Support</h4><p>Email: <a href="mailto:support@indibucks.in" className="text-indigo-600">support@indibucks.in</a></p><p>Phone: +91 98107 93780 (Mon-Fri, 9am-6pm)</p></div>
+              <div className="p-4 border border-gray-200 dark:border-white/10 rounded-xl"><h4 className="font-bold text-gray-900 dark:text-white mb-2">Level 2: Compliance Officer</h4><p>Name: Mr. Rahul Kumar</p><p>Email: compliance@indibucks.in</p></div>
+              <p className="text-xs text-gray-500">If unresolved after 30 days, lodge a complaint at <a href="https://scores.gov.in" className="text-indigo-600 underline">SEBI SCORES</a>.</p>
+            </div>
+          )}
+          {activeTab === 'privacy' && <div className="space-y-4"><h3 className="font-bold text-gray-900 dark:text-white">Data Privacy Policy</h3><p>Your data is processed securely. We do not sell your personal information.</p><ul className="list-disc pl-5 space-y-1"><li>Data encrypted using AES-256.</li><li>KYC data shared only with KRA/Central Registry.</li><li>Transaction data routed to BSE Star MF.</li></ul></div>}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FAQModal = ({ onClose }) => (
   <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -176,6 +246,21 @@ const FAQModal = ({ onClose }) => (
             <p className="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">{item.a}</p>
           </div>
         ))}
+      </div>
+    </div>
+  </div>
+);
+
+const AboutModal = ({ onClose }) => (
+  <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="glass-panel p-8 rounded-3xl w-full max-w-lg relative bg-white dark:bg-[#111] max-h-[80vh] overflow-y-auto">
+      <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X/></button>
+      <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400"><TrendingUp className="w-6 h-6"/></div>
+      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">About IndiBucks</h2>
+      <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm leading-relaxed">IndiBucks is a technology-first investment platform dedicated to simplifying wealth creation. We act as a bridge between investors and India's top Asset Management Companies.</p>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl"><h4 className="font-bold text-indigo-600 dark:text-indigo-400">Compliance</h4><p className="text-xs text-gray-500 dark:text-gray-400">AMFI Registered Distributor.</p></div>
+        <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl"><h4 className="font-bold text-indigo-600 dark:text-indigo-400">Security</h4><p className="text-xs text-gray-500 dark:text-gray-400">ISO 27001 Compliant.</p></div>
       </div>
     </div>
   </div>
@@ -215,7 +300,7 @@ const InflationCalculator = () => {
       <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2"><Skull className="w-6 h-6 text-red-500 animate-pulse"/><h3 className="font-bold text-xl text-gray-900 dark:text-white">Inflation Reality Check</h3></div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">See the real value of your savings if kept idle.</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">See the real value of your savings if kept idle in a bank.</p>
           <div className="space-y-6">
             <div><div className="flex justify-between text-xs font-bold mb-2 text-gray-500 dark:text-gray-400"><span>TODAY'S CASH</span><span className="text-gray-900 dark:text-white">₹{currentAmount.toLocaleString()}</span></div><input type="range" min="10000" max="1000000" step="10000" value={currentAmount} onChange={e=>setCurrentAmount(Number(e.target.value))} className="w-full accent-red-500 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer"/></div>
             <div><div className="flex justify-between text-xs font-bold mb-2 text-gray-500 dark:text-gray-400"><span>AFTER {years} YEARS</span><span>6% INFLATION</span></div><input type="range" min="5" max="40" step="1" value={years} onChange={e=>setYears(Number(e.target.value))} className="w-full accent-red-500 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer"/></div>
@@ -260,7 +345,7 @@ const LoginModal = ({ onClose }) => {
       <div className="glass-panel p-8 rounded-3xl w-full max-w-sm relative text-center shadow-2xl bg-white dark:bg-[#111]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X/></button>
         <h2 className="text-2xl font-bold mb-1 text-gray-900 dark:text-white">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
-        <p className="text-sm text-gray-500 mb-6">Manage your wealth.</p>
+        <p className="text-sm text-gray-500 mb-6">Manage your wealth with AI precision.</p>
         {error && <div className="mb-4 p-2 bg-red-50 text-red-500 text-xs rounded-lg">{error}</div>}
         <button onClick={handleGoogle} className="w-full bg-white text-gray-700 border border-gray-300 font-bold py-3 rounded-xl mb-4 hover:bg-gray-50 transition flex items-center justify-center gap-2"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5"/> Continue with Google</button>
         <div className="relative mb-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">Or continue with email</span></div></div>
@@ -305,6 +390,10 @@ const InvestModal = ({ fund, user, onClose, onKycRequest }) => {
         <h2 className="text-xl font-bold mb-1 text-gray-900 dark:text-white">Invest in {fund.name}</h2>
         <p className="text-xs text-gray-500 mb-6">{fund.category} • {fund.risk} Risk</p>
         <div className="mb-6"><label className="text-xs font-bold text-gray-500 uppercase">Amount (₹)</label><input type="number" value={amount} onChange={e=>setAmount(e.target.value)} className="w-full text-3xl font-bold bg-transparent border-b border-gray-200 dark:border-white/10 py-2 text-gray-900 dark:text-white outline-none focus:border-indigo-500"/></div>
+        <div className="bg-yellow-50 dark:bg-yellow-900/10 p-3 rounded-xl mb-6 border border-yellow-200 dark:border-yellow-800 flex items-start gap-2">
+          <FileWarning className="w-4 h-4 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5"/>
+          <p className="text-[10px] text-yellow-700 dark:text-yellow-400">Read Scheme Information Document (SID) & Key Information Memorandum (KIM) before investing. <a href="#" className="underline">View Documents</a></p>
+        </div>
         <div className="grid grid-cols-2 gap-4"><button onClick={handleWhatsApp} className="p-4 rounded-2xl border border-green-200 bg-green-50 dark:bg-green-900/10 hover:bg-green-100 dark:hover:bg-green-900/20 transition text-left group"><MessageCircle className="w-6 h-6 text-green-600 mb-2"/><div className="font-bold text-green-700 dark:text-green-400">WhatsApp</div><div className="text-[10px] text-green-600/70">Human Assisted</div></button><button onClick={handleBSEOrder} className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition text-left group relative overflow-hidden">{bseProcessing ? <Loader className="w-6 h-6 text-indigo-600 animate-spin mb-2"/> : <Zap className="w-6 h-6 text-indigo-600 mb-2"/>}<div className="font-bold text-indigo-700 dark:text-indigo-400">BSE StarMF</div><div className="text-[10px] text-indigo-600/70">Direct Execution</div></button></div>
         <p className="text-center text-[10px] text-gray-400 mt-4">By proceeding, you agree to T&C.</p>
       </div>
@@ -481,6 +570,18 @@ const AIAdvisor = ({ user }) => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
   
+  // Initialize auth
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+  }, []);
+
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([{ id: 'welcome', text: "Namaste! I'm IndiGenie. Let's plan your financial freedom. Ask me anything about funds, SIPs, or taxes!", sender: 'ai' }]);
@@ -529,20 +630,47 @@ const LandingPage = ({ setView }) => (
       <InflationCalculator />
       <div className="py-6 border-y border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 mb-24"><div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center gap-8 md:gap-16 text-center"><div className="flex items-center gap-2 opacity-70 grayscale hover:grayscale-0 transition"><ShieldCheck className="w-5 h-5 text-green-600"/><span className="text-xs font-bold text-gray-600 dark:text-gray-300">AES-256 Encryption</span></div><div className="flex items-center gap-2 opacity-70 grayscale hover:grayscale-0 transition"><Landmark className="w-5 h-5 text-blue-600"/><span className="text-xs font-bold text-gray-600 dark:text-gray-300">BSE StarMF Partner</span></div><div className="flex items-center gap-2 opacity-70 grayscale hover:grayscale-0 transition"><FileCheck className="w-5 h-5 text-orange-600"/><span className="text-xs font-bold text-gray-600 dark:text-gray-300">SEBI Compliant</span></div></div></div>
       <div className="mb-24"><h2 className="text-3xl font-black text-gray-900 dark:text-white mb-12">TRUSTED BY 1500+ FAMILIES</h2><div className="grid md:grid-cols-3 gap-6">{TESTIMONIALS.map((t,i)=><div key={i} className="glass-panel p-8 rounded-3xl text-left bg-white dark:bg-white/5"><p className="text-gray-600 dark:text-gray-300 italic mb-4">"{t.t}"</p><p className="font-bold text-gray-900 dark:text-white">{t.n}</p><p className="text-xs text-indigo-500 uppercase">{t.r}</p></div>)}</div></div>
-      <footer className="glass-panel p-12 rounded-3xl text-left grid md:grid-cols-4 gap-8 bg-white dark:bg-white/5"><div className="col-span-2"><h4 className="text-2xl font-black text-gray-900 dark:text-white mb-4">IndiBucks</h4><p className="text-gray-500 dark:text-gray-400 text-sm mb-2">Empowering India since 2005.</p><p className="text-gray-400 text-xs">AMFI Registered Distributor. Mutual Fund investments are subject to market risks.</p></div><div><h5 className="font-bold text-gray-900 dark:text-white mb-4">Contact</h5><ul className="space-y-2 text-gray-500 dark:text-gray-400 text-sm"><li>+91 98107 93780</li><li>IndiBucksMart@gmail.com</li><li>Rohini, Delhi</li></ul></div></footer>
+      <footer className="glass-panel p-12 rounded-3xl text-left grid md:grid-cols-4 gap-8 bg-white dark:bg-white/5 border-t border-gray-200 dark:border-white/10">
+        <div className="col-span-2">
+           <h4 className="text-2xl font-black text-gray-900 dark:text-white mb-4">IndiBucks</h4>
+           <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Empowering India since 2005. AMFI Registered Mutual Fund Distributor.</p>
+           <p className="text-gray-400 text-xs mb-1"><strong>ARN:</strong> ARN-183942</p>
+           <p className="text-gray-400 text-xs"><strong>Validity:</strong> Perpetual</p>
+        </div>
+        <div>
+           <h5 className="font-bold text-gray-900 dark:text-white mb-4">Contact & Support</h5>
+           <ul className="space-y-2 text-gray-500 dark:text-gray-400 text-sm">
+              <li>+91 98107 93780</li>
+              <li>support@indibucks.in</li>
+              <li>123, Fintech Tower, Delhi</li>
+           </ul>
+        </div>
+        <div>
+           <h5 className="font-bold text-gray-900 dark:text-white mb-4">Grievance</h5>
+           <p className="text-xs text-gray-500">
+             <strong>Officer:</strong> Mr. Rahul Kumar<br/>
+             grievance@indibucks.in<br/>
+             <span className="opacity-70">If unresolved, approach SEBI SCORES.</span>
+           </p>
+        </div>
+        <div className="col-span-full border-t border-gray-200 dark:border-white/10 pt-6 text-center text-xs text-gray-400">
+          <p>Mutual Fund investments are subject to market risks, read all scheme related documents carefully. Past performance is not indicative of future returns.</p>
+        </div>
+      </footer>
     </div>
   </div>
 );
 
 // --- NAVIGATION ---
-const Navbar = ({ user, setView, isMenuOpen, setIsMenuOpen, onLoginClick, isAdminMode, isDark, toggleTheme, onLogout, onOpenAbout, onOpenFAQ }) => {
+const Navbar = ({ user, setView, isMenuOpen, setIsMenuOpen, onLoginClick, isAdminMode, isDark, toggleTheme, onLogout, onOpenAbout, onOpenFAQ, onOpenCompliance }) => {
   if (isAdminMode) return null;
   return (
     <nav className="fixed w-full z-50 top-4 px-4">
-      <div className="max-w-4xl mx-auto glass-panel rounded-full px-6 h-16 flex items-center justify-between shadow-xl backdrop-blur-xl bg-white/90 dark:bg-black/80">
+      <div className="max-w-5xl mx-auto glass-panel rounded-full px-6 h-16 flex items-center justify-between shadow-xl backdrop-blur-xl bg-white/90 dark:bg-black/80">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}><div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg"><TrendingUp className="w-5 h-5"/></div><span className="text-xl font-bold tracking-tighter text-gray-900 dark:text-white">IndiBucks</span></div>
         <div className="hidden md:flex items-center gap-1">{['funds', 'social', 'analyzer'].map(item => <button key={item} onClick={() => setView(item)} className="px-4 py-2 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-white transition capitalize">{item}</button>)}</div>
         <div className="flex items-center gap-3">
+          <button onClick={onOpenCompliance} className="p-2 rounded-full text-gray-500 hover:text-indigo-600 hidden sm:block" title="Compliance"><Scale className="w-5 h-5"/></button>
           <button onClick={onOpenFAQ} className="p-2 rounded-full text-gray-500 hover:text-indigo-600 hidden sm:block"><HelpCircle className="w-5 h-5"/></button>
           <button onClick={toggleTheme} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition">{isDark ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}</button>
           <button onClick={() => setView('advisor')} className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white hover:scale-110 transition shadow-lg"><Sparkles className="w-5 h-5"/></button>
@@ -556,7 +684,7 @@ const Navbar = ({ user, setView, isMenuOpen, setIsMenuOpen, onLoginClick, isAdmi
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-gray-900 dark:text-white p-2"><Menu className="w-6 h-6"/></button>
         </div>
       </div>
-      {isMenuOpen && <div className="absolute top-24 left-4 right-4 glass-panel rounded-3xl p-4 flex flex-col gap-2 animate-in slide-in-from-top-5 bg-white dark:bg-black/90 shadow-2xl">{['home', 'funds', 'social', 'analyzer', 'advisor'].map(item => <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl capitalize">{item}</button>)}<button onClick={onOpenAbout} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300">About Us</button><button onClick={onOpenFAQ} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300">FAQs</button></div>}
+      {isMenuOpen && <div className="absolute top-24 left-4 right-4 glass-panel rounded-3xl p-4 flex flex-col gap-2 animate-in slide-in-from-top-5 bg-white dark:bg-black/90 shadow-2xl">{['home', 'funds', 'social', 'analyzer', 'advisor'].map(item => <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl capitalize">{item}</button>)}<button onClick={onOpenAbout} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300">About Us</button><button onClick={onOpenFAQ} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300">FAQs</button><button onClick={onOpenCompliance} className="p-4 text-left font-bold text-gray-700 dark:text-gray-300">Legal</button></div>}
     </nav>
   );
 };
@@ -572,6 +700,7 @@ const App = () => {
   const [selectedFund, setSelectedFund] = useState(null);
   const [showAbout, setShowAbout] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
+  const [showCompliance, setShowCompliance] = useState(false);
 
   useEffect(() => { const handleHashChange = () => { if (window.location.hash === '#admin') setView('admin'); }; handleHashChange(); window.addEventListener('hashchange', handleHashChange); const unsubscribe = onAuthStateChanged(auth, setUser); return () => { window.removeEventListener('hashchange', handleHashChange); unsubscribe(); }; }, []);
   
@@ -583,6 +712,7 @@ const App = () => {
   return (
     <div className={`min-h-screen ${isDark ? 'dark bg-[#050505] text-white' : 'bg-[#f8fafc] text-gray-900'} transition-colors duration-300`}>
       <GlobalStyles />
+      <AnimatedBackground />
       <Navbar 
         user={user} setView={setView} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} 
         onLoginClick={() => setShowLogin(true)} isAdminMode={view === 'admin'} 
@@ -590,20 +720,22 @@ const App = () => {
         onLogout={handleLogout}
         onOpenAbout={() => setShowAbout(true)}
         onOpenFAQ={() => setShowFAQ(true)}
+        onOpenCompliance={() => setShowCompliance(true)}
       />
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       {kycNeeded && <KYCFlow user={user} onComplete={() => setKycNeeded(false)} />}
       {selectedFund && <InvestModal fund={selectedFund} user={user} onClose={() => setSelectedFund(null)} onKycRequest={() => { setSelectedFund(null); setKycNeeded(true); }} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showFAQ && <FAQModal onClose={() => setShowFAQ(false)} />}
+      {showCompliance && <ComplianceModal onClose={() => setShowCompliance(false)} />}
 
       <main>
-        {view === 'home' && <LandingPage setView={setView} />}
-        {view === 'funds' && <FundMarketplace user={user} setShowLogin={setShowLogin} onInvestClick={(fund) => { if(!user) { setShowLogin(true); } else { setSelectedFund(fund); } }} />}
-        {view === 'social' && <SocialTribes />}
-        {view === 'analyzer' && <CombinedAnalyzer />}
-        {view === 'advisor' && <AIAdvisor user={user} />}
-        {view === 'dashboard' && <Dashboard user={user} onKycRequest={() => setKycNeeded(true)} onLogout={handleLogout} />}
+        {view === 'home' && <PageTransition><LandingPage setView={setView} /></PageTransition>}
+        {view === 'funds' && <PageTransition><FundMarketplace user={user} setShowLogin={setShowLogin} onInvestClick={(fund) => { if(!user) { setShowLogin(true); } else { setSelectedFund(fund); } }} /></PageTransition>}
+        {view === 'social' && <PageTransition><SocialTribes /></PageTransition>}
+        {view === 'analyzer' && <PageTransition><CombinedAnalyzer /></PageTransition>}
+        {view === 'advisor' && <PageTransition><AIAdvisor user={user} /></PageTransition>}
+        {view === 'dashboard' && <PageTransition><Dashboard user={user} onKycRequest={() => setKycNeeded(true)} onLogout={handleLogout} /></PageTransition>}
         {view === 'admin' && <div className="pt-32 text-center">Admin Panel Hidden</div>}
       </main>
     </div>
