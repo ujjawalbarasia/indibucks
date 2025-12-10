@@ -41,6 +41,8 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ComposedChart
 } from 'recharts';
 
+
+
 // --- Firebase Configuration ---
 const firebaseConfig = {
   apiKey: "AIzaSyDALtiUuYzJDh3F5hQ5mmqGmxspzH3K2sM",
@@ -110,7 +112,7 @@ const TRIBES = [
 
 const COLLECTIONS = [
   { id: 'high-return', label: "High Return", icon: <TrendingUp className="w-5 h-5 text-green-500"/>, filter: { risk: "Very High" } },
-  { id: 'tax-saving', label: "Tax Saving", icon: <FileText className="w-5 h-5 text-blue-500"/>, filter: { category: "ELSS" } }, // Note: Logic needs to handle ELSS mapping if simple
+  { id: 'tax-saving', label: "Tax Saving", icon: <FileText className="w-5 h-5 text-blue-500"/>, filter: { category: "ELSS" } },
   { id: 'sip-500', label: "SIP with ₹500", icon: <Coins className="w-5 h-5 text-orange-500"/>, filter: { minInv: 500 } },
   { id: 'large-cap', label: "Large Cap", icon: <Crown className="w-5 h-5 text-purple-500"/>, filter: { category: "Large Cap" } },
   { id: 'mid-cap', label: "Mid Cap", icon: <Layers className="w-5 h-5 text-indigo-500"/>, filter: { category: "Mid Cap" } },
@@ -145,7 +147,7 @@ const callGeminiFlash = async (prompt, systemInstruction = "") => {
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } })
     });
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "System Unavailable";
   } catch (e) { return "I'm having trouble connecting to the financial grid. Please try again."; }
 };
 
@@ -250,7 +252,320 @@ const PageTransition = ({ children }) => (
   <div className="animate-slide-up relative z-10">{children}</div>
 );
 
-// --- COMPLIANCE & LEGAL MODALS ---
+// =======================
+// WIDGETS & SMALL COMPONENTS (Defined First)
+// =======================
+
+const QuickCollections = ({ onSelect }) => (
+  <div className="mb-10 animate-slide-up">
+    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Crown className="w-5 h-5 text-yellow-500"/> Curated Collections</h3>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {COLLECTIONS.map(col => (
+        <div 
+          key={col.id} 
+          onClick={() => onSelect(col.filter)}
+          className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-white/10 transition-all group border-transparent hover:border-indigo-500/30"
+        >
+          <div className="p-3 bg-white dark:bg-black/40 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+            {col.icon}
+          </div>
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{col.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const MoneyReels = () => (
+  <div className="mb-12 animate-slide-up" style={{animationDelay: '0.2s'}}>
+    <div className="flex justify-between items-end mb-6"><h3 className="font-bold text-2xl flex items-center gap-2 text-gray-900 dark:text-white"><Smartphone className="w-6 h-6 text-indigo-500 dark:text-cyan-400"/> <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-500">Money Shortcuts</span></h3></div>
+    <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide snap-x perspective-1000">
+      {REELS.map(reel => (
+        <div key={reel.id} className="min-w-[200px] h-[320px] rounded-3xl relative overflow-hidden group cursor-pointer snap-center shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border border-white/10">
+          <img src={reel.img} alt={reel.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+          
+          <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 text-[10px] font-bold text-white border border-white/20"><Eye className="w-3 h-3"/> {reel.views}</div>
+          <div className="absolute inset-0 flex items-center justify-center"><div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center group-hover:scale-110 transition border border-white/30"><Play className="w-6 h-6 text-white fill-white ml-1" /></div></div>
+          <div className="absolute bottom-0 left-0 w-full p-5"><div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 border border-white/20">{reel.icon}</div><p className="text-white font-bold text-lg leading-tight">{reel.title}</p></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const InflationCalculator = () => {
+  const [currentAmount, setCurrentAmount] = useState(100000);
+  const [years, setYears] = useState(20);
+  const inflationRate = 0.06;
+  const realValue = currentAmount / Math.pow(1 + inflationRate, years);
+  return (
+    <div className="glass-panel p-8 rounded-3xl mb-16 relative overflow-hidden group text-left transition-all duration-300 hover:scale-[1.01]">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2"><Skull className="w-6 h-6 text-red-500 animate-pulse"/><h3 className="font-bold text-xl text-gray-900 dark:text-white">Inflation Reality Check</h3></div>
+          <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">See the real value of your savings if kept idle in a bank.</p>
+          <div className="space-y-6">
+            <div><div className="flex justify-between text-xs font-bold mb-2 text-gray-500 dark:text-gray-400"><span>TODAY'S CASH</span><span className="text-gray-900 dark:text-white">₹{currentAmount.toLocaleString()}</span></div><input type="range" min="10000" max="1000000" step="10000" value={currentAmount} onChange={e=>setCurrentAmount(Number(e.target.value))} className="w-full accent-red-500 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer"/></div>
+            <div><div className="flex justify-between text-xs font-bold mb-2 text-gray-500 dark:text-gray-400"><span>AFTER {years} YEARS</span><span>6% INFLATION</span></div><input type="range" min="5" max="40" step="1" value={years} onChange={e=>setYears(Number(e.target.value))} className="w-full accent-red-500 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer"/></div>
+          </div>
+        </div>
+        <div className="glass-panel p-6 rounded-2xl text-center min-w-[200px] border border-red-500/20 bg-white/50 dark:bg-black/20">
+           <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 font-bold">Effective Value</p>
+           <h4 className="text-4xl font-heading font-bold text-gray-900 dark:text-white mb-2">₹{Math.round(realValue).toLocaleString()}</h4>
+           <div className="inline-block bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs px-3 py-1 rounded-full font-bold border border-red-200 dark:border-red-500/20">-{((1 - realValue/currentAmount)*100).toFixed(0)}% LOSS</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WealthAccelerator = () => {
+  const [extraSip, setExtraSip] = useState(500);
+  const rate = 0.12; 
+  const years = 20;
+  const i = rate / 12;
+  const n = years * 12;
+  const extraWealth = extraSip * ((((Math.pow(1 + i, n)) - 1) / i) * (1 + i));
+
+  return (
+    <div className="glass-panel p-6 rounded-3xl mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-100 dark:border-indigo-500/30">
+      <div className="flex justify-between items-start mb-4">
+        <div><h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2"><TrendingUp className="w-5 h-5 text-green-500"/> Wealth Accelerator</h3><p className="text-xs text-gray-500 dark:text-gray-400">Small increase today = Massive wealth tomorrow.</p></div>
+      </div>
+      <div className="space-y-4">
+        <div><div className="flex justify-between text-sm font-bold text-gray-700 dark:text-gray-300 mb-2"><span>Increase SIP by:</span><span className="text-indigo-600 dark:text-indigo-400">₹{extraSip}</span></div><input type="range" min="500" max="10000" step="500" value={extraSip} onChange={e=>setExtraSip(Number(e.target.value))} className="w-full accent-indigo-600 h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"/></div>
+        <div className="bg-white dark:bg-black/30 p-4 rounded-xl text-center border border-gray-100 dark:border-white/10"><p className="text-xs text-gray-500 uppercase font-bold mb-1">Extra Wealth in 20 Years</p><h4 className="text-3xl font-black text-green-600 dark:text-green-400">+₹{(extraWealth/100000).toFixed(2)} Lakhs</h4></div>
+        <button className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition flex items-center justify-center gap-2"><Zap className="w-4 h-4 fill-current"/> Boost My SIP</button>
+      </div>
+    </div>
+  );
+};
+
+const RiskRadar = () => {
+  const data = [
+    { subject: 'Returns (3Y)', A: 120, fullMark: 150 },
+    { subject: 'Consistency', A: 98, fullMark: 150 },
+    { subject: 'Volatility', A: 86, fullMark: 150 },
+    { subject: 'Alpha', A: 99, fullMark: 150 },
+    { subject: 'Liquidity', A: 85, fullMark: 150 },
+    { subject: 'Expense Ratio', A: 65, fullMark: 150 },
+  ];
+
+  return (
+    <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 transition-all duration-500 hover:scale-[1.02]">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Activity className="w-5 h-5 text-indigo-500"/> Risk Radar 360
+        </h3>
+        <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-2 py-1 rounded-full font-bold">BETA</span>
+      </div>
+      <p className="text-xs text-gray-500 mb-4">Holistic health analysis vs Market Benchmark.</p>
+      <div className="h-[250px] w-full flex items-center justify-center -ml-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+            <PolarGrid stroke="#e5e7eb" strokeOpacity={0.3} />
+            <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 'bold' }} />
+            <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
+            <Radar name="Portfolio" dataKey="A" stroke="#6366f1" strokeWidth={2} fill="#6366f1" fillOpacity={0.3} />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+        <div className="p-2 bg-gray-50 dark:bg-black/20 rounded-lg">
+          <div className="text-[10px] text-gray-400 uppercase">Alpha</div>
+          <div className="font-bold text-indigo-500 text-sm">+2.4%</div>
+        </div>
+        <div className="p-2 bg-gray-50 dark:bg-black/20 rounded-lg">
+          <div className="text-[10px] text-gray-400 uppercase">Beta</div>
+          <div className="font-bold text-gray-600 dark:text-gray-300 text-sm">0.85</div>
+        </div>
+        <div className="p-2 bg-gray-50 dark:bg-black/20 rounded-lg">
+          <div className="text-[10px] text-gray-400 uppercase">Sharpe</div>
+          <div className="font-bold text-green-500 text-sm">1.2</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MarketSentiment = () => {
+  const [sentiment, setSentiment] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const analyzeSentiment = async () => {
+      const headlines = [
+        "RBI holds repo rate steady amid inflation concerns",
+        "Sensex surges 500 points on strong global cues",
+        "Tech stocks rally as quarterly earnings beat estimates",
+        "Oil prices dip slightly, easing pressure on rupee"
+      ];
+      
+      const prompt = `Analyze these financial headlines and provide a market sentiment score from 0 (Extreme Fear) to 100 (Extreme Greed). Also provide a 1-sentence summary. Headlines: ${JSON.stringify(headlines)}. Return JSON: { "score": number, "summary": string }`;
+      
+      const res = await callGeminiJSON(prompt);
+      if (res) setSentiment(res);
+      setLoading(false);
+    };
+    analyzeSentiment();
+  }, []);
+
+  return (
+    <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 h-full flex flex-col justify-between">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Newspaper className="w-5 h-5 text-indigo-500"/> Market Mood
+        </h3>
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          <span className="text-[10px] text-gray-500 uppercase font-bold">Live AI</span>
+        </div>
+      </div>
+      
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader className="w-8 h-8 text-indigo-500 animate-spin"/>
+        </div>
+      ) : (
+        <>
+          <div className="relative h-32 flex items-center justify-center">
+            <Gauge className="w-32 h-32 text-gray-200 dark:text-gray-700 absolute opacity-20" />
+            <div className="text-center relative z-10">
+              <div className="text-4xl font-black text-indigo-600 dark:text-indigo-400">{sentiment?.score || 65}</div>
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Score</div>
+            </div>
+            <div className="absolute w-1 h-14 bg-indigo-500 origin-bottom bottom-1/2 left-1/2 -ml-0.5 rounded-full transition-transform duration-1000 ease-out" style={{ transform: `rotate(${(sentiment?.score || 65) * 1.8 - 90}deg)` }}></div>
+          </div>
+          <p className="text-xs text-gray-600 dark:text-gray-300 text-center mt-2 leading-relaxed">
+            "{sentiment?.summary || "Market sentiment appears moderately bullish based on recent positive global cues and steady rates."}"
+          </p>
+        </>
+      )}
+    </div>
+  );
+};
+
+const GoalDNA = () => {
+  const [goals, setGoals] = useState([
+    { id: 1, name: "Tesla Model 3", target: 4500000, current: 1200000, date: "2026", icon: <Target className="w-4 h-4 text-white"/>, color: "bg-gradient-to-r from-red-500 to-pink-500" },
+    { id: 2, name: "Bali Villa", target: 8000000, current: 3500000, date: "2030", icon: <Globe className="w-4 h-4 text-white"/>, color: "bg-gradient-to-r from-blue-500 to-cyan-500" },
+  ]);
+
+  return (
+    <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 h-full transition-all duration-500 hover:scale-[1.02]">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Sprout className="w-5 h-5 text-green-500"/> Goal DNA
+        </h3>
+        <button className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">+ ADD GOAL</button>
+      </div>
+      <div className="space-y-6">
+        {goals.map(g => {
+          const progress = (g.current / g.target) * 100;
+          return (
+            <div key={g.id} className="relative group">
+              <div className="flex justify-between items-end mb-2">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl shadow-md ${g.color}`}>{g.icon}</div>
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white text-sm">{g.name}</div>
+                    <div className="text-[10px] text-gray-400">{g.date} Target</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-gray-900 dark:text-white text-sm">{progress.toFixed(0)}%</div>
+                  <div className="text-[10px] text-gray-400">₹{(g.current/100000).toFixed(1)}L / {(g.target/100000).toFixed(1)}L</div>
+                </div>
+              </div>
+              <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className={`h-full ${g.color} rounded-full transition-all duration-1000 relative overflow-hidden`} style={{ width: `${progress}%` }}>
+                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-xl border border-green-100 dark:border-green-500/20 flex items-center gap-3">
+        <Leaf className="w-8 h-8 text-green-600 dark:text-green-400"/>
+        <div>
+          <div className="font-bold text-green-800 dark:text-green-300 text-sm">Carbon Footprint</div>
+          <div className="text-[10px] text-green-600 dark:text-green-400">Your portfolio is <span className="font-bold">85% Green</span>. Great job!</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SIPTurbocharger = () => {
+  const [stepUp, setStepUp] = useState(10);
+  return (
+    <div className="glass-panel p-6 rounded-3xl mb-8 bg-gradient-to-br from-indigo-900/10 to-purple-900/10 border-indigo-500/20">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Rocket className="w-5 h-5 text-indigo-500"/> SIP Turbocharger
+        </h3>
+        <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 px-2 py-1 rounded-full font-bold">AUTO-PILOT</span>
+      </div>
+      <p className="text-xs text-gray-500 mb-6">See the magic of increasing your SIP annually.</p>
+      
+      <div className="flex items-end gap-2 h-32 mb-4">
+        <div className="flex-1 bg-gray-200 dark:bg-gray-800 rounded-t-xl relative group">
+          <div className="absolute bottom-0 w-full bg-indigo-300 dark:bg-indigo-800 rounded-t-xl transition-all duration-1000" style={{height: '40%'}}></div>
+          <div className="absolute -top-6 left-0 w-full text-center text-[10px] text-gray-500">Normal</div>
+        </div>
+        <div className="flex-1 bg-gray-200 dark:bg-gray-800 rounded-t-xl relative group">
+          <div className="absolute bottom-0 w-full bg-indigo-500 dark:bg-indigo-600 rounded-t-xl transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.5)]" style={{height: `${40 + stepUp * 1.5}%`}}></div>
+          <div className="absolute -top-6 left-0 w-full text-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Turbo</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <span className="text-xs font-bold text-gray-500">Step Up: {stepUp}%</span>
+        <input type="range" min="5" max="25" step="5" value={stepUp} onChange={e=>setStepUp(Number(e.target.value))} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
+      </div>
+      <p className="text-center text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-4">
+        {stepUp}% annual hike = 2.5x Wealth in 20 Years!
+      </p>
+    </div>
+  );
+};
+
+// =======================
+// FEATURE COMPONENTS & MODALS (Defined Before Usage)
+// =======================
+
+const LoginModal = ({ onClose }) => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const handleGoogle = async () => { try { await signInWithPopup(auth, googleProvider); onClose(); } catch (e) { setError(e.message); } };
+  const handleEmailAuth = async (e) => { e.preventDefault(); setError(''); try { if (isSignUp) { const res = await createUserWithEmailAndPassword(auth, email, password); await updateProfile(res.user, { displayName: name }); } else { await signInWithEmailAndPassword(auth, email, password); } onClose(); } catch (e) { setError(e.message); } };
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-slide-up">
+      <div className="glass-panel p-8 rounded-3xl w-full max-w-sm relative text-center shadow-2xl bg-white dark:bg-[#111]">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X/></button>
+        <h2 className="text-2xl font-bold mb-1 text-gray-900 dark:text-white">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
+        <p className="text-sm text-gray-500 mb-6">Manage your wealth with AI precision.</p>
+        {error && <div className="mb-4 p-2 bg-red-50 text-red-500 text-xs rounded-lg">{error}</div>}
+        <button onClick={handleGoogle} className="w-full bg-white text-gray-700 border border-gray-300 font-bold py-3 rounded-xl mb-4 hover:bg-gray-50 transition flex items-center justify-center gap-2"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5"/> Continue with Google</button>
+        <div className="relative mb-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-white/10"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-white dark:bg-[#111] text-gray-500">Or continue with email</span></div></div>
+        <form onSubmit={handleEmailAuth} className="space-y-3">
+          {isSignUp && <input type="text" placeholder="Full Name" value={name} onChange={e=>setName(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl outline-none text-gray-900 dark:text-white"/>}
+          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl outline-none text-gray-900 dark:text-white"/>
+          <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl outline-none text-gray-900 dark:text-white"/>
+          <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition">{isSignUp ? 'Sign Up' : 'Log In'}</button>
+        </form>
+        <p className="mt-4 text-xs text-gray-500">{isSignUp ? "Already have an account?" : "Don't have an account?"} <button onClick={()=>setIsSignUp(!isSignUp)} className="text-indigo-600 font-bold ml-1 hover:underline">{isSignUp ? 'Log In' : 'Sign Up'}</button></p>
+      </div>
+    </div>
+  );
+};
+
 const ComplianceModal = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('regulatory');
   return (
@@ -326,18 +641,66 @@ const AboutModal = ({ onClose }) => (
   </div>
 );
 
-// --- NEW COMPONENT: Fund Details Modal (Groww-like Deep Dive) ---
+const FundFaceOff = ({ fund1, fund2, onClose }) => {
+  const [comparison, setComparison] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const compare = async () => {
+      const prompt = `Compare these two mutual funds for a retail investor in India: 1. ${fund1.name} (${fund1.category}) and 2. ${fund2.name} (${fund2.category}). 
+      Highlight the pros and cons of each and suggest who should invest in which. Keep it concise (under 150 words) and use markdown bolding.`;
+      
+      const res = await callGeminiFlash(prompt, "You are a senior financial analyst.");
+      setComparison(res);
+      setLoading(false);
+    };
+    compare();
+  }, [fund1, fund2]);
+
+  return (
+    <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-slide-up">
+      <div className="glass-panel p-8 rounded-3xl w-full max-w-2xl relative bg-white dark:bg-[#111] border border-indigo-500/20 shadow-2xl">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X/></button>
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-indigo-100 dark:bg-white/10 rounded-full flex items-center justify-center text-indigo-600 dark:text-white font-bold mx-auto mb-2">{fund1.name[0]}</div>
+            <p className="text-xs font-bold text-gray-500 max-w-[100px] truncate">{fund1.name}</p>
+          </div>
+          <Swords className="w-8 h-8 text-red-500 animate-pulse" />
+          <div className="text-center">
+            <div className="w-12 h-12 bg-indigo-100 dark:bg-white/10 rounded-full flex items-center justify-center text-indigo-600 dark:text-white font-bold mx-auto mb-2">{fund2.name[0]}</div>
+            <p className="text-xs font-bold text-gray-500 max-w-[100px] truncate">{fund2.name}</p>
+          </div>
+        </div>
+        
+        <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-6">AI Battle Analysis</h3>
+        
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-10 space-y-4">
+            <Loader className="w-10 h-10 text-indigo-500 animate-spin"/>
+            <p className="text-xs text-gray-500 animate-pulse">Analyzing portfolios, risk ratios & past returns...</p>
+          </div>
+        ) : (
+          <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-2xl text-sm leading-relaxed text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 max-h-[40vh] overflow-y-auto">
+            {comparison}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const FundDetailsModal = ({ fund, onClose, onInvest, user }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [calculatorType, setCalculatorType] = useState('sip');
   const [investmentAmt, setInvestmentAmt] = useState(5000);
   const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [eli5Mode, setEli5Mode] = useState(false); // USP: ELI5 Mode
+  const [eli5Mode, setEli5Mode] = useState(false); 
 
   // Mock data for chart
   const data = Array.from({length: 20}, (_, i) => ({
     name: `Yr ${i}`,
-    nav: fund.nav * (1 + (i * 0.12)) + (Math.random() * 20)
+    nav: (Number(fund.nav) || 100) * (1 + (i * 0.12)) + (Math.random() * 20)
   }));
 
   useEffect(() => {
@@ -356,8 +719,8 @@ const FundDetailsModal = ({ fund, onClose, onInvest, user }) => {
   }, [activeTab, fund]);
 
   const projectedValue = calculatorType === 'sip' 
-    ? investmentAmt * 12 * 5 * 1.35 // Rough 12% for 5 years
-    : investmentAmt * 1.76; // Rough 12% for 5 years lump
+    ? investmentAmt * 12 * 5 * 1.35 
+    : investmentAmt * 1.76; 
 
   return (
     <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-slide-up">
@@ -383,9 +746,7 @@ const FundDetailsModal = ({ fund, onClose, onInvest, user }) => {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-            {/* Tabs */}
             <div className="flex gap-6 mb-8 border-b border-gray-100 dark:border-white/10 pb-1">
               {['overview', 'analysis', 'calculator'].map(tab => (
                 <button 
@@ -488,7 +849,6 @@ const FundDetailsModal = ({ fund, onClose, onInvest, user }) => {
             )}
           </div>
 
-          {/* Footer / CTA */}
           <div className="w-80 border-l border-gray-100 dark:border-white/10 p-6 flex flex-col justify-between bg-gray-50/50 dark:bg-black/20">
              <div>
                <h4 className="font-bold text-gray-900 dark:text-white mb-4">Why this fund?</h4>
@@ -511,28 +871,29 @@ const FundDetailsModal = ({ fund, onClose, onInvest, user }) => {
   );
 };
 
-// --- NEW COMPONENT: Quick Collections (Groww Style) ---
-const QuickCollections = ({ onSelect }) => (
-  <div className="mb-10 animate-slide-up">
-    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Crown className="w-5 h-5 text-yellow-500"/> Curated Collections</h3>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      {COLLECTIONS.map(col => (
-        <div 
-          key={col.id} 
-          onClick={() => onSelect(col.filter)}
-          className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-white/10 transition-all group border-transparent hover:border-indigo-500/30"
-        >
-          <div className="p-3 bg-white dark:bg-black/40 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-            {col.icon}
-          </div>
-          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{col.label}</span>
+const InvestModal = ({ fund, user, onClose, onKycRequest }) => {
+  const [amount, setAmount] = useState(5000);
+  const [bseProcessing, setBseProcessing] = useState(false);
+  const handleBSEOrder = async () => { if (!user) { alert("Please login."); return; } setBseProcessing(true); const kycRef = doc(db, 'artifacts', appId, 'users', user.uid, 'kyc', 'status'); const kycSnap = await getDoc(kycRef); if (!kycSnap.exists()) { setBseProcessing(false); onKycRequest(); return; } const ucc = kycSnap.data().ucc; await new Promise(r => setTimeout(r, 2000)); await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'orders'), { fundName: fund.name, amount: Number(amount), type: 'BSE StarMF', status: 'Processing', orderId: `ORD-${Math.floor(Math.random()*100000)}`, timestamp: serverTimestamp() }); alert(`Order Placed! Order ID: BSE-${Math.floor(Math.random()*100000)}`); onClose(); setBseProcessing(false); };
+  const handleWhatsApp = () => { const url = `https://wa.me/919810793780?text=${encodeURIComponent(`Hi, I want to invest ₹${amount} in ${fund.name} (Regular Plan) via IndiBucks.`)}`; window.open(url, '_blank'); onClose(); };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-slide-up">
+      <div className="glass-panel p-6 rounded-3xl w-full max-w-md relative bg-white dark:bg-[#111]">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 dark:hover:text-white"><X/></button>
+        <h2 className="text-xl font-bold mb-1 text-gray-900 dark:text-white">Invest in {fund.name}</h2>
+        <p className="text-xs text-gray-500 mb-6">{fund.category} • {fund.risk} Risk</p>
+        <div className="mb-6"><label className="text-xs font-bold text-gray-500 uppercase">Amount (₹)</label><input type="number" value={amount} onChange={e=>setAmount(e.target.value)} className="w-full text-3xl font-bold bg-transparent border-b border-gray-200 dark:border-white/10 py-2 text-gray-900 dark:text-white outline-none focus:border-indigo-500"/></div>
+        <div className="bg-yellow-50 dark:bg-yellow-900/10 p-3 rounded-xl mb-6 border border-yellow-200 dark:border-yellow-800 flex items-start gap-2">
+          <FileWarning className="w-4 h-4 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5"/>
+          <p className="text-[10px] text-yellow-700 dark:text-yellow-400">Read Scheme Information Document (SID) & Key Information Memorandum (KIM) before investing. <a href="#" className="underline">View Documents</a></p>
         </div>
-      ))}
+        <div className="grid grid-cols-2 gap-4"><button onClick={handleWhatsApp} className="p-4 rounded-2xl border border-green-200 bg-green-50 dark:bg-green-900/10 hover:bg-green-100 dark:hover:bg-green-900/20 transition text-left group"><MessageCircle className="w-6 h-6 text-green-600 mb-2"/><div className="font-bold text-green-700 dark:text-green-400">WhatsApp</div><div className="text-[10px] text-green-600/70">Human Assisted</div></button><button onClick={handleBSEOrder} className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition text-left group relative overflow-hidden">{bseProcessing ? <Loader className="w-6 h-6 text-indigo-600 animate-spin mb-2"/> : <Zap className="w-6 h-6 text-indigo-600 mb-2"/>}<div className="font-bold text-indigo-700 dark:text-indigo-400">BSE StarMF</div><div className="text-[10px] text-indigo-600/70">Direct Execution</div></button></div>
+        <p className="text-center text-[10px] text-gray-400 mt-4">By proceeding, you agree to T&C.</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-// --- NEW FEATURE: INDICOMMAND (NATURAL LANGUAGE OS) ---
 const IndiCommand = ({ onExecute }) => {
   const [input, setInput] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -601,7 +962,6 @@ const IndiCommand = ({ onExecute }) => {
   );
 };
 
-// --- NEW COMPONENT: ANTI-PANIC MODE ---
 const PanicMode = ({ onClose }) => {
   const [stage, setStage] = useState(1);
   return (
@@ -653,323 +1013,8 @@ const PanicMode = ({ onClose }) => {
   );
 };
 
-// --- USP FEATURE: SIP Turbocharger ---
-const SIPTurbocharger = () => {
-  const [stepUp, setStepUp] = useState(10);
-  return (
-    <div className="glass-panel p-6 rounded-3xl mb-8 bg-gradient-to-br from-indigo-900/10 to-purple-900/10 border-indigo-500/20">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Rocket className="w-5 h-5 text-indigo-500"/> SIP Turbocharger
-        </h3>
-        <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 px-2 py-1 rounded-full font-bold">AUTO-PILOT</span>
-      </div>
-      <p className="text-xs text-gray-500 mb-6">See the magic of increasing your SIP annually.</p>
-      
-      <div className="flex items-end gap-2 h-32 mb-4">
-        <div className="flex-1 bg-gray-200 dark:bg-gray-800 rounded-t-xl relative group">
-          <div className="absolute bottom-0 w-full bg-indigo-300 dark:bg-indigo-800 rounded-t-xl transition-all duration-1000" style={{height: '40%'}}></div>
-          <div className="absolute -top-6 left-0 w-full text-center text-[10px] text-gray-500">Normal</div>
-        </div>
-        <div className="flex-1 bg-gray-200 dark:bg-gray-800 rounded-t-xl relative group">
-          <div className="absolute bottom-0 w-full bg-indigo-500 dark:bg-indigo-600 rounded-t-xl transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.5)]" style={{height: `${40 + stepUp * 1.5}%`}}></div>
-          <div className="absolute -top-6 left-0 w-full text-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Turbo</div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <span className="text-xs font-bold text-gray-500">Step Up: {stepUp}%</span>
-        <input type="range" min="5" max="25" step="5" value={stepUp} onChange={e=>setStepUp(Number(e.target.value))} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
-      </div>
-      <p className="text-center text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-4">
-        {stepUp}% annual hike = 2.5x Wealth in 20 Years!
-      </p>
-    </div>
-  );
-};
-
-// --- USP FEATURE: MARKET SENTIMENT METER (Gemini Powered) ---
-const MarketSentiment = () => {
-  const [sentiment, setSentiment] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const analyzeSentiment = async () => {
-      // Simulated real-time headlines
-      const headlines = [
-        "RBI holds repo rate steady amid inflation concerns",
-        "Sensex surges 500 points on strong global cues",
-        "Tech stocks rally as quarterly earnings beat estimates",
-        "Oil prices dip slightly, easing pressure on rupee"
-      ];
-      
-      const prompt = `Analyze these financial headlines and provide a market sentiment score from 0 (Extreme Fear) to 100 (Extreme Greed). Also provide a 1-sentence summary. Headlines: ${JSON.stringify(headlines)}. Return JSON: { "score": number, "summary": string }`;
-      
-      const res = await callGeminiJSON(prompt);
-      if (res) setSentiment(res);
-      setLoading(false);
-    };
-    analyzeSentiment();
-  }, []);
-
-  return (
-    <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 h-full flex flex-col justify-between">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Newspaper className="w-5 h-5 text-indigo-500"/> Market Mood
-        </h3>
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          <span className="text-[10px] text-gray-500 uppercase font-bold">Live AI</span>
-        </div>
-      </div>
-      
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Loader className="w-8 h-8 text-indigo-500 animate-spin"/>
-        </div>
-      ) : (
-        <>
-          <div className="relative h-32 flex items-center justify-center">
-            <Gauge className="w-32 h-32 text-gray-200 dark:text-gray-700 absolute opacity-20" />
-            <div className="text-center relative z-10">
-              <div className="text-4xl font-black text-indigo-600 dark:text-indigo-400">{sentiment?.score || 65}</div>
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Score</div>
-            </div>
-            {/* Simple CSS Needle Rotation based on score */}
-            <div className="absolute w-1 h-14 bg-indigo-500 origin-bottom bottom-1/2 left-1/2 -ml-0.5 rounded-full transition-transform duration-1000 ease-out" style={{ transform: `rotate(${(sentiment?.score || 65) * 1.8 - 90}deg)` }}></div>
-          </div>
-          <p className="text-xs text-gray-600 dark:text-gray-300 text-center mt-2 leading-relaxed">
-            "{sentiment?.summary || "Market sentiment appears moderately bullish based on recent positive global cues and steady rates."}"
-          </p>
-        </>
-      )}
-    </div>
-  );
-};
-
-// --- NEW COMPONENT: FUND FACE-OFF (LLM COMPARATOR) ---
-const FundFaceOff = ({ fund1, fund2, onClose }) => {
-  const [comparison, setComparison] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const compare = async () => {
-      const prompt = `Compare these two mutual funds for a retail investor in India: 1. ${fund1.name} (${fund1.category}) and 2. ${fund2.name} (${fund2.category}). 
-      Highlight the pros and cons of each and suggest who should invest in which. Keep it concise (under 150 words) and use markdown bolding.`;
-      
-      const res = await callGeminiFlash(prompt, "You are a senior financial analyst.");
-      setComparison(res);
-      setLoading(false);
-    };
-    compare();
-  }, [fund1, fund2]);
-
-  return (
-    <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-slide-up">
-      <div className="glass-panel p-8 rounded-3xl w-full max-w-2xl relative bg-white dark:bg-[#111] border border-indigo-500/20 shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X/></button>
-        <div className="flex items-center justify-center gap-4 mb-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-indigo-100 dark:bg-white/10 rounded-full flex items-center justify-center text-indigo-600 dark:text-white font-bold mx-auto mb-2">{fund1.name[0]}</div>
-            <p className="text-xs font-bold text-gray-500 max-w-[100px] truncate">{fund1.name}</p>
-          </div>
-          <Swords className="w-8 h-8 text-red-500 animate-pulse" />
-          <div className="text-center">
-            <div className="w-12 h-12 bg-indigo-100 dark:bg-white/10 rounded-full flex items-center justify-center text-indigo-600 dark:text-white font-bold mx-auto mb-2">{fund2.name[0]}</div>
-            <p className="text-xs font-bold text-gray-500 max-w-[100px] truncate">{fund2.name}</p>
-          </div>
-        </div>
-        
-        <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-6">AI Battle Analysis</h3>
-        
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-10 space-y-4">
-            <Loader className="w-10 h-10 text-indigo-500 animate-spin"/>
-            <p className="text-xs text-gray-500 animate-pulse">Analyzing portfolios, risk ratios & past returns...</p>
-          </div>
-        ) : (
-          <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-2xl text-sm leading-relaxed text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 max-h-[40vh] overflow-y-auto">
-            {comparison}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// --- NEW COMPONENTS (USPs) ---
-
-const RiskRadar = () => {
-  const data = [
-    { subject: 'Returns (3Y)', A: 120, fullMark: 150 },
-    { subject: 'Consistency', A: 98, fullMark: 150 },
-    { subject: 'Volatility', A: 86, fullMark: 150 },
-    { subject: 'Alpha', A: 99, fullMark: 150 },
-    { subject: 'Liquidity', A: 85, fullMark: 150 },
-    { subject: 'Expense Ratio', A: 65, fullMark: 150 },
-  ];
-
-  return (
-    <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 transition-all duration-500 hover:scale-[1.02]">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Activity className="w-5 h-5 text-indigo-500"/> Risk Radar 360
-        </h3>
-        <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-2 py-1 rounded-full font-bold">BETA</span>
-      </div>
-      <p className="text-xs text-gray-500 mb-4">Holistic health analysis vs Market Benchmark.</p>
-      <div className="h-[250px] w-full flex items-center justify-center -ml-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-            <PolarGrid stroke="#e5e7eb" strokeOpacity={0.3} />
-            <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 'bold' }} />
-            <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
-            <Radar name="Portfolio" dataKey="A" stroke="#6366f1" strokeWidth={2} fill="#6366f1" fillOpacity={0.3} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="grid grid-cols-3 gap-2 mt-2 text-center">
-        <div className="p-2 bg-gray-50 dark:bg-black/20 rounded-lg">
-          <div className="text-[10px] text-gray-400 uppercase">Alpha</div>
-          <div className="font-bold text-indigo-500 text-sm">+2.4%</div>
-        </div>
-        <div className="p-2 bg-gray-50 dark:bg-black/20 rounded-lg">
-          <div className="text-[10px] text-gray-400 uppercase">Beta</div>
-          <div className="font-bold text-gray-600 dark:text-gray-300 text-sm">0.85</div>
-        </div>
-        <div className="p-2 bg-gray-50 dark:bg-black/20 rounded-lg">
-          <div className="text-[10px] text-gray-400 uppercase">Sharpe</div>
-          <div className="font-bold text-green-500 text-sm">1.2</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const GoalDNA = () => {
-  const [goals, setGoals] = useState([
-    { id: 1, name: "Tesla Model 3", target: 4500000, current: 1200000, date: "2026", icon: <Target className="w-4 h-4 text-white"/>, color: "bg-gradient-to-r from-red-500 to-pink-500" },
-    { id: 2, name: "Bali Villa", target: 8000000, current: 3500000, date: "2030", icon: <Globe className="w-4 h-4 text-white"/>, color: "bg-gradient-to-r from-blue-500 to-cyan-500" },
-  ]);
-
-  return (
-    <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 h-full transition-all duration-500 hover:scale-[1.02]">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Sprout className="w-5 h-5 text-green-500"/> Goal DNA
-        </h3>
-        <button className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">+ ADD GOAL</button>
-      </div>
-      <div className="space-y-6">
-        {goals.map(g => {
-          const progress = (g.current / g.target) * 100;
-          return (
-            <div key={g.id} className="relative group">
-              <div className="flex justify-between items-end mb-2">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl shadow-md ${g.color}`}>{g.icon}</div>
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-white text-sm">{g.name}</div>
-                    <div className="text-[10px] text-gray-400">{g.date} Target</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-gray-900 dark:text-white text-sm">{progress.toFixed(0)}%</div>
-                  <div className="text-[10px] text-gray-400">₹{(g.current/100000).toFixed(1)}L / {(g.target/100000).toFixed(1)}L</div>
-                </div>
-              </div>
-              <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                <div className={`h-full ${g.color} rounded-full transition-all duration-1000 relative overflow-hidden`} style={{ width: `${progress}%` }}>
-                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-xl border border-green-100 dark:border-green-500/20 flex items-center gap-3">
-        <Leaf className="w-8 h-8 text-green-600 dark:text-green-400"/>
-        <div>
-          <div className="font-bold text-green-800 dark:text-green-300 text-sm">Carbon Footprint</div>
-          <div className="text-[10px] text-green-600 dark:text-green-400">Your portfolio is <span className="font-bold">85% Green</span>. Great job!</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-// --- EXISTING COMPONENTS ---
-const WealthAccelerator = () => {
-  const [extraSip, setExtraSip] = useState(500);
-  const rate = 0.12; 
-  const years = 20;
-  const i = rate / 12;
-  const n = years * 12;
-  const extraWealth = extraSip * ((((Math.pow(1 + i, n)) - 1) / i) * (1 + i));
-
-  return (
-    <div className="glass-panel p-6 rounded-3xl mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-100 dark:border-indigo-500/30">
-      <div className="flex justify-between items-start mb-4">
-        <div><h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2"><TrendingUp className="w-5 h-5 text-green-500"/> Wealth Accelerator</h3><p className="text-xs text-gray-500 dark:text-gray-400">Small increase today = Massive wealth tomorrow.</p></div>
-      </div>
-      <div className="space-y-4">
-        <div><div className="flex justify-between text-sm font-bold text-gray-700 dark:text-gray-300 mb-2"><span>Increase SIP by:</span><span className="text-indigo-600 dark:text-indigo-400">₹{extraSip}</span></div><input type="range" min="500" max="10000" step="500" value={extraSip} onChange={e=>setExtraSip(Number(e.target.value))} className="w-full accent-indigo-600 h-2 bg-gray-300 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"/></div>
-        <div className="bg-white dark:bg-black/30 p-4 rounded-xl text-center border border-gray-100 dark:border-white/10"><p className="text-xs text-gray-500 uppercase font-bold mb-1">Extra Wealth in 20 Years</p><h4 className="text-3xl font-black text-green-600 dark:text-green-400">+₹{(extraWealth/100000).toFixed(2)} Lakhs</h4></div>
-        <button className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition flex items-center justify-center gap-2"><Zap className="w-4 h-4 fill-current"/> Boost My SIP</button>
-      </div>
-    </div>
-  );
-};
-
-const InflationCalculator = () => {
-  const [currentAmount, setCurrentAmount] = useState(100000);
-  const [years, setYears] = useState(20);
-  const inflationRate = 0.06;
-  const realValue = currentAmount / Math.pow(1 + inflationRate, years);
-  return (
-    <div className="glass-panel p-8 rounded-3xl mb-16 relative overflow-hidden group text-left transition-all duration-300 hover:scale-[1.01]">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2"><Skull className="w-6 h-6 text-red-500 animate-pulse"/><h3 className="font-bold text-xl text-gray-900 dark:text-white">Inflation Reality Check</h3></div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">See the real value of your savings if kept idle in a bank.</p>
-          <div className="space-y-6">
-            <div><div className="flex justify-between text-xs font-bold mb-2 text-gray-500 dark:text-gray-400"><span>TODAY'S CASH</span><span className="text-gray-900 dark:text-white">₹{currentAmount.toLocaleString()}</span></div><input type="range" min="10000" max="1000000" step="10000" value={currentAmount} onChange={e=>setCurrentAmount(Number(e.target.value))} className="w-full accent-red-500 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer"/></div>
-            <div><div className="flex justify-between text-xs font-bold mb-2 text-gray-500 dark:text-gray-400"><span>AFTER {years} YEARS</span><span>6% INFLATION</span></div><input type="range" min="5" max="40" step="1" value={years} onChange={e=>setYears(Number(e.target.value))} className="w-full accent-red-500 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer"/></div>
-          </div>
-        </div>
-        <div className="glass-panel p-6 rounded-2xl text-center min-w-[200px] border border-red-500/20 bg-white/50 dark:bg-black/20">
-           <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 font-bold">Effective Value</p>
-           <h4 className="text-4xl font-heading font-bold text-gray-900 dark:text-white mb-2">₹{Math.round(realValue).toLocaleString()}</h4>
-           <div className="inline-block bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs px-3 py-1 rounded-full font-bold border border-red-200 dark:border-red-500/20">-{((1 - realValue/currentAmount)*100).toFixed(0)}% LOSS</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const MoneyReels = () => (
-  <div className="mb-12 animate-slide-up" style={{animationDelay: '0.2s'}}>
-    <div className="flex justify-between items-end mb-6"><h3 className="font-bold text-2xl flex items-center gap-2 text-gray-900 dark:text-white"><Smartphone className="w-6 h-6 text-indigo-500 dark:text-cyan-400"/> <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-cyan-400 dark:to-blue-500">Money Shortcuts</span></h3></div>
-    <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-hide snap-x perspective-1000">
-      {REELS.map(reel => (
-        <div key={reel.id} className="min-w-[200px] h-[320px] rounded-3xl relative overflow-hidden group cursor-pointer snap-center shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border border-white/10">
-          <img src={reel.img} alt={reel.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-          
-          <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 text-[10px] font-bold text-white border border-white/20"><Eye className="w-3 h-3"/> {reel.views}</div>
-          <div className="absolute inset-0 flex items-center justify-center"><div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center group-hover:scale-110 transition border border-white/30"><Play className="w-6 h-6 text-white fill-white ml-1" /></div></div>
-          <div className="absolute bottom-0 left-0 w-full p-5"><div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 border border-white/20">{reel.icon}</div><p className="text-white font-bold text-lg leading-tight">{reel.title}</p></div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
 // 1. INVEST
-const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
+const FundMarketplace = ({ user, setShowLogin, onFundClick, onInvestClick }) => {
   const [masterList, setMasterList] = useState([]);
   const [displayedFunds, setDisplayedFunds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -980,7 +1025,6 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [compareList, setCompareList] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
-  const [selectedFundDetails, setSelectedFundDetails] = useState(null);
 
   useEffect(() => { const fetchMaster = async () => { try { const res = await fetch('https://api.mfapi.in/mf'); const all = await res.json(); const regularOnly = all.filter(f => !f.schemeName.includes("Direct") && !f.schemeName.includes("DIRECT")); setMasterList(regularOnly); await loadFundDetails(FEATURED_FUNDS); } catch(e) { console.error(e); setLoading(false); } }; fetchMaster(); }, []);
 
@@ -1020,7 +1064,6 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
   const handleCollectionSelect = (filter) => {
     setFilterCat(filter.category || 'All');
     setFilterRisk(filter.risk || 'All');
-    // Scroll to list
     const list = document.getElementById('fund-list');
     if(list) list.scrollIntoView({behavior: 'smooth'});
   }
@@ -1029,16 +1072,6 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
 
   return (
     <div className="pt-28 pb-24 px-4 max-w-7xl mx-auto min-h-screen relative animate-slide-up">
-      {/* Deep Dive Modal */}
-      {selectedFundDetails && (
-        <FundDetailsModal 
-          fund={selectedFundDetails} 
-          onClose={() => setSelectedFundDetails(null)} 
-          onInvest={onInvestClick}
-          user={user}
-        />
-      )}
-
       {showComparison && compareList.length === 2 && (
         <FundFaceOff fund1={compareList[0]} fund2={compareList[1]} onClose={() => setShowComparison(false)} />
       )}
@@ -1048,7 +1081,6 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
         <div className="glass-panel p-1 rounded-full flex items-center bg-white dark:bg-white/5"><button onClick={() => setVibeMode(false)} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${!vibeMode ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}>Classic View</button><button onClick={() => setVibeMode(true)} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${vibeMode ? 'bg-pink-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}>Gen Z Mode</button></div>
       </div>
       
-      {/* NEW: Quick Collections */}
       <QuickCollections onSelect={handleCollectionSelect} />
 
       <MoneyReels />
@@ -1057,7 +1089,6 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
          <div><h4 className="font-bold text-blue-800 dark:text-blue-300 text-sm">Fair Disclosure</h4><p className="text-xs text-blue-600 dark:text-blue-400">We operate as a distributor offering Regular Plans. You get expert human advice & AI insights at no extra direct cost. We earn a small commission from AMCs.</p></div>
       </div>
       
-      {/* Search & Compare Bar */}
       <div className="sticky top-24 z-30 glass-panel p-4 rounded-2xl mb-10 border-t border-gray-100 dark:border-white/10 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1 flex gap-2">
@@ -1083,7 +1114,6 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
           <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} className="px-4 py-3 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl text-gray-700 dark:text-white outline-none cursor-pointer"><option value="All">All Assets</option><option value="Small Cap">Small Cap</option><option value="Mid Cap">Mid Cap</option><option value="Large Cap">Large Cap</option><option value="Liquid">Liquid</option></select>
         </div>
         
-        {/* Active Comparison Bar */}
         {compareList.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10 flex justify-between items-center animate-slide-up">
             <div className="flex gap-2">
@@ -1112,7 +1142,7 @@ const FundMarketplace = ({ user, setShowLogin, onInvestClick }) => {
           return ( 
             <div 
               key={fund.code} 
-              onClick={() => setSelectedFundDetails(fund)}
+              onClick={() => onFundClick(fund)}
               className={`glass-panel glass-panel-hover p-6 rounded-2xl transition-all group relative overflow-hidden bg-white dark:bg-white/5 cursor-pointer ${isSelected ? 'ring-2 ring-indigo-500' : ''}`}
             >
               <div className="flex justify-between items-start mb-6 relative z-10">
@@ -1466,7 +1496,7 @@ const App = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [kycNeeded, setKycNeeded] = useState(false); 
-  const [selectedFund, setSelectedFund] = useState(null);
+  const [selectedFund, setSelectedFund] = useState(null); // Used for invest modal
   const [showAbout, setShowAbout] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [showCompliance, setShowCompliance] = useState(false);
@@ -1498,6 +1528,15 @@ const App = () => {
     }
   };
 
+  // Function to handle opening the invest modal directly
+  const handleInvestClick = (fund) => {
+    if (!user) {
+      setShowLogin(true);
+    } else {
+      setSelectedFund(fund); // Opens InvestModal
+    }
+  };
+
   return (
     <div className={`min-h-screen ${isDark ? 'dark bg-[#050505] text-white' : 'bg-[#f8fafc] text-gray-900'} transition-colors duration-300`}>
       <GlobalStyles />
@@ -1515,7 +1554,17 @@ const App = () => {
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       {kycNeeded && <KYCFlow user={user} onComplete={() => setKycNeeded(false)} />}
       
-      {/* Updated Flow: Modal handles investing */}
+      {/* Deep Dive Modal */}
+      {selectedFundDetails && (
+        <FundDetailsModal 
+          fund={selectedFundDetails} 
+          onClose={() => setSelectedFundDetails(null)} 
+          onInvest={handleInvestClick}
+          user={user}
+        />
+      )}
+
+      {/* Direct Invest Modal */}
       {selectedFund && <InvestModal fund={selectedFund} user={user} onClose={() => setSelectedFund(null)} onKycRequest={() => { setSelectedFund(null); setKycNeeded(true); }} />}
       
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
@@ -1526,7 +1575,16 @@ const App = () => {
 
       <main>
         {view === 'home' && <PageTransition><LandingPage setView={setView} /></PageTransition>}
-        {view === 'funds' && <PageTransition><FundMarketplace user={user} setShowLogin={setShowLogin} onInvestClick={(fund) => { if(!user) { setShowLogin(true); } else { setSelectedFund(fund); } }} /></PageTransition>}
+        {view === 'funds' && (
+          <PageTransition>
+            <FundMarketplace 
+              user={user} 
+              setShowLogin={setShowLogin} 
+              onFundClick={(fund) => setSelectedFundDetails(fund)} // Only set details
+              onInvestClick={handleInvestClick} // Pass down invest handler
+            />
+          </PageTransition>
+        )}
         {view === 'social' && <PageTransition><SocialTribes /></PageTransition>}
         {view === 'analyzer' && <PageTransition><CombinedAnalyzer /></PageTransition>}
         {view === 'advisor' && <PageTransition><AIAdvisor user={user} /></PageTransition>}
