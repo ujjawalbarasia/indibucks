@@ -23,6 +23,15 @@ const AppContent = () => {
   const [selectedFund, setSelectedFund] = useState(null);
   const [showingKyc, setShowingKyc] = useState(false);
 
+  // Theme Toggle Effect - CRITICAL FOR TAILWIND DARK MODE
+  React.useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
   // Command Handler
   const handleIndiCommand = useCallback((action) => {
     if (action.type === 'NAVIGATE') setView(action.payload.target);
@@ -44,7 +53,7 @@ const AppContent = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDark ? 'dark bg-[#050505] text-white' : 'bg-[#f8fafc] text-gray-900'} transition-colors duration-300`}>
+    <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
       <GlobalStyles />
       <AnimatedBackground />
 
