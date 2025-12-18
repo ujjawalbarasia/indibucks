@@ -39,7 +39,6 @@ import {
 // 1. CONFIGURATION & CONSTANTS
 // ==========================================
 
-- Firebase Configuration ---
 const firebaseConfig = {
   apiKey: "AIzaSyDALtiUuYzJDh3F5hQ5mmqGmxspzH3K2sM",
   authDomain: "indibucks-cd137.firebaseapp.com",
@@ -1261,3 +1260,4 @@ const App = () => {
 };
 
 export default App;
+
