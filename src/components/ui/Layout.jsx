@@ -16,7 +16,7 @@ export const GlobalStyles = () => (
 );
 
 export const AnimatedBackground = () => (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#050510]">
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-slate-50 dark:bg-[#050510] transition-colors duration-500">
         {/* Aurora Gradients */}
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-900/20 rounded-full blur-[120px] animate-float"></div>
         <div className="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-purple-900/20 rounded-full blur-[120px] animate-float animation-delay-2000"></div>

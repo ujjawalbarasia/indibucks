@@ -11,8 +11,7 @@
 
 body {
   font-family: var(--font-body);
-  background-color: #050510;
-  /* Deep Void */
+  /* background-color: #050510; Removed for Theme Support */
   color: white;
   overflow-x: hidden;
 }

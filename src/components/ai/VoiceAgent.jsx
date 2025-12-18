@@ -19,27 +19,34 @@ export const VoiceAgent = () => {
     const { callJSON } = useGemini();
 
     useEffect(() => {
-        if ('webkitSpeechRecognition' in window) {
-            const recognition = new window.webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-IN'; // Optimized for Indian accent
-
-            recognition.onstart = () => setIsListening(true);
-            recognition.onend = () => setIsListening(false);
-            recognition.onresult = async (event) => {
-                const text = event.results[0][0].transcript;
-                setTranscript(text);
-                handleCommand(text);
-            };
-
-            recognitionRef.current = recognition;
-        } else {
-            console.warn("Speech Recognition not supported in this browser.");
+        if (!('webkitSpeechRecognition' in window)) {
+            console.warn("Speech Recognition not supported.");
+            setAiResponse("Voice not supported in this browser. Try Chrome.");
+            return;
         }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-IN';
+
+        recognition.onstart = () => { setIsListening(true); setAiResponse("Listening... Say 'Invest 500 in Axis'"); };
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = (e) => { setIsListening(false); setAiResponse("Error: " + e.error); };
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            setTranscript(text);
+            handleCommand(text);
+        };
+
+        recognitionRef.current = recognition;
     }, []);
 
     const toggleListen = () => {
+        if (!recognitionRef.current) {
+            alert("Voice Not Supported. Please use Chrome/Edge.");
+            return;
+        }
         if (isListening) recognitionRef.current.stop();
         else recognitionRef.current.start();
     };
