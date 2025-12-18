@@ -54,7 +54,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "indibucks-cd137";
 const googleProvider = new GoogleAuthProvider();
-const apiKey = import.meta.env.GEMINI;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 // PRODUCTION ENDPOINT: Relative path for Vercel Serverless Functions
 const BACKEND_API_URL = "/api"; 
@@ -1260,4 +1260,5 @@ const App = () => {
 };
 
 export default App;
+
 
