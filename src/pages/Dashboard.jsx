@@ -83,8 +83,16 @@ export const Dashboard = ({ user, zenMode }) => {
                 <div className={`col-span-1 lg:col-span-2 glass-panel p-8 rounded-3xl ${zenMode ? 'bg-emerald-900' : 'bg-indigo-900'} text-white transition-colors duration-500 shadow-2xl relative overflow-hidden`}>
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
-                        <p className="opacity-70 text-[10px] font-bold uppercase tracking-widest mb-2">{zenMode ? 'Zen Portfolio' : 'Total Portfolio Value'}</p>
-                        <h2 className={`text-6xl font-mono font-bold mb-6 ${zenMode ? 'zen-mode-blur select-none' : ''}`}>₹{Math.round(portfolio.current).toLocaleString()}</h2>
+                        <div className="flex justify-between items-start mb-2">
+                            <p className="opacity-70 text-[10px] font-bold uppercase tracking-widest">{zenMode ? 'Zen Portfolio' : 'Total Portfolio Value'}</p>
+                            <button onClick={() => setStressMode(!stressMode)} className={`text-[10px] px-2 py-1 rounded border transition-colors ${stressMode ? 'bg-red-500 border-red-500 text-white animate-pulse' : 'border-white/20 text-indigo-200 hover:bg-white/10'}`}>
+                                {stressMode ? '⚠️ 2008 CRASH SIM' : '🧪 Stress Test'}
+                            </button>
+                        </div>
+                        <h2 className={`text-6xl font-mono font-bold mb-6 ${zenMode ? 'zen-mode-blur select-none' : ''} ${stressMode ? 'text-red-400 transition-colors duration-500' : 'text-white'}`}>
+                            ₹{Math.round(portfolio.current * (stressMode ? 0.65 : 1)).toLocaleString()}
+                        </h2>
+                        {stressMode && <p className="text-xs text-red-300 mb-4 font-bold bg-red-900/40 p-2 rounded inline-block animate-slide-up">📉 Simulating -35% Market Crash (2008)</p>}
                         <div className="flex gap-4">
                             <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-bold border border-white/20">Invested: ₹{portfolio.invested.toLocaleString()}</div>
                             <div className={`px-4 py-2 rounded-xl text-xs font-bold border border-white/20 ${xirr >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>XIRR: {xirr >= 0 ? '+' : ''}{xirr.toFixed(2)}%</div>
