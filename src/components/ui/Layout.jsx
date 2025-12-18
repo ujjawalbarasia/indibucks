@@ -12,25 +12,52 @@ export const GlobalStyles = () => (
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .animate-float { animation: float 6s ease-in-out infinite; }
     @keyframes float { 0% { transform: translate(0px, 0px); } 50% { transform: translate(20px, 20px); } 100% { transform: translate(0px, 0px); } }
+    
+    /* New Pulse Glow for Center Orb */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+    .animate-pulse-glow { animation: pulse-glow 4s infinite; }
+    
+    /* Reveal effect for grid */
+    .reveal-grid { transition: opacity 1s ease; }
   `}</style>
 );
 
 export const AnimatedBackground = () => (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-slate-50 dark:bg-[#050510] transition-colors duration-500">
-        {/* Aurora Gradients */}
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-900/20 rounded-full blur-[120px] animate-float"></div>
-        <div className="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-purple-900/20 rounded-full blur-[120px] animate-float animation-delay-2000"></div>
-        <div className="absolute bottom-[-20%] left-[20%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[100px] animate-float animation-delay-4000"></div>
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-slate-50 dark:bg-[#050510] transition-colors duration-1000">
+        {/* Dual Palette System: Pastel for Light, Neon for Dark */}
 
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150"></div>
-        <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '50px 50px' }}></div>
+        {/* Blob 1: Top Left */}
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] animate-float 
+            bg-indigo-300/40 dark:bg-indigo-600/20 mix-blend-multiply dark:mix-blend-normal transition-all duration-1000"></div>
+
+        {/* Blob 2: Top Right */}
+        <div className="absolute top-[10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[120px] animate-float animation-delay-2000 
+            bg-purple-300/40 dark:bg-purple-600/10 mix-blend-multiply dark:mix-blend-normal transition-all duration-1000"></div>
+
+        {/* Blob 3: Bottom Left */}
+        <div className="absolute bottom-[-20%] left-[10%] w-[50%] h-[50%] rounded-full blur-[100px] animate-float animation-delay-4000 
+            bg-cyan-300/40 dark:bg-blue-600/10 mix-blend-multiply dark:mix-blend-normal transition-all duration-1000"></div>
+
+        {/* Blob 4: Center Pulse (New) */}
+        <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] rounded-full blur-[100px] animate-pulse-glow 
+            bg-pink-300/30 dark:bg-indigo-500/5 transition-all duration-1000"></div>
+
+        {/* Noise Texture Overlay for Premium Feel */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-30 dark:opacity-20 brightness-100 dark:brightness-150 mix-blend-overlay"></div>
+
+        {/* Cyber Grid (Dark Mode Only) */}
+        <div className="absolute inset-0 opacity-0 dark:opacity-20 transition-opacity duration-1000"
+            style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)', backgroundSize: '60px 60px' }}>
+        </div>
     </div>
 );
 
 export const Layout = ({ children }) => {
     return (
-        <div className="relative min-h-screen text-white font-sans selection:bg-indigo-500/30">
+        <div className="relative min-h-screen text-gray-900 dark:text-white font-sans selection:bg-indigo-500/30">
             <GlobalStyles />
             <AnimatedBackground />
             <div className="relative z-10">
