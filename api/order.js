@@ -98,17 +98,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
-```
-
-### Step 4: Update `App.jsx` Connection
-In your frontend `App.jsx` (which I provided earlier), you just need to change **one line** to point to your new Vercel API routes instead of an external domain.
-
-**Find this line:**
-```javascript
-const BACKEND_API_URL = "https://your-api-domain.com/api/bse";
-```
-
-**Change it to:**
-```javascript
-// Relative path works automatically on Vercel
-const BACKEND_API_URL = "/api";
