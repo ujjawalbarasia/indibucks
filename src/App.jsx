@@ -9,6 +9,9 @@ import { Dashboard } from './pages/Dashboard';
 import { SocialTribes } from './pages/SocialTribes';
 import { AIAdvisor } from './pages/AIAdvisor';
 import { PortfolioAnalyzer } from './pages/PortfolioAnalyzer';
+import { Boardroom } from './components/ai/Boardroom';
+import { FutureYou } from './components/ai/FutureYou';
+import { SpendAnalyzer } from './components/ai/SpendAnalyzer';
 import { LoginModal, KYCFlow } from './components/modals/AuthModals';
 import { InvestModal, FundDetailsModal } from './components/modals/InvestmentModals';
 
@@ -34,6 +37,9 @@ const AppContent = () => {
       case 'advisor': return <AIAdvisor />;
       case 'advisor': return <AIAdvisor />;
       case 'analyzer': return <PortfolioAnalyzer />;
+      case 'boardroom': return <Boardroom />;
+      case 'future': return <FutureYou user={user} />;
+      case 'spend': return <SpendAnalyzer />;
       default: return <LandingPage />;
     }
   };
@@ -51,7 +57,7 @@ const AppContent = () => {
             <span className="text-xl font-black tracking-tighter dark:text-white">IndiBucks</span>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            {['funds', 'social', 'advisor', 'analyzer'].map(item => (
+            {['funds', 'social', 'advisor', 'analyzer', 'boardroom', 'future', 'spend'].map(item => (
               <button key={item} onClick={() => setView(item)} className={`px-4 py-2 text-xs font-black uppercase transition-colors ${view === item ? 'text-indigo-600' : 'text-gray-400 hover:text-indigo-400'}`}>{item === 'analyzer' ? 'Medic' : item}</button>
             ))}
             {user && !user.isAnonymous && <button onClick={() => setView('dashboard')} className={`px-4 py-2 text-xs font-black uppercase transition-colors ${view === 'dashboard' ? 'text-indigo-600' : 'text-gray-400'}`}>Dashboard</button>}

@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { db, appId } from '../utils/firebase';
 import { BSEService } from '../services/bse';
 import { MarketSentiment, SIPTurbocharger, GoalDNA } from '../components/widgets/Widgets';
+import { NewsFeed } from '../components/widgets/NewsFeed';
 import { PanicMode } from '../components/modals/InvestmentModals';
 import { VoiceAgent } from '../components/ai/VoiceAgent';
 
@@ -140,7 +141,11 @@ export const Dashboard = ({ user, zenMode }) => {
                         </div>
                     )}
                 </div>
-                <div><MarketSentiment /><div className="mt-6"><SIPTurbocharger /></div></div>
+                <div>
+                    <MarketSentiment />
+                    <div className="mt-6"><NewsFeed /></div>
+                    <div className="mt-6"><SIPTurbocharger /></div>
+                </div>
             </div>
             <div className="mt-8 grid md:grid-cols-1"><GoalDNA user={user} /></div>
             <VoiceAgent />
