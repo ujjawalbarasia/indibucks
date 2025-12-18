@@ -17,27 +17,51 @@ export const GlobalStyles = () => (
     .animate-pulse-glow { animation: pulse-glow 4s infinite; }
     
     /* Reveal effect for grid */
-    .reveal-grid { transition: opacity 1s ease; }
   `}</style>
 );
 
+// Animated Background: Restored "Nebula" Theme logic
 export const AnimatedBackground = () => (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#f8f9fa] dark:bg-[#000000] transition-colors duration-1000">
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#f0f4f8] dark:bg-[#050505] transition-colors duration-1000">
+        <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+            body { font-family: 'Inter', sans-serif; }
+            h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; }
+            
+            /* Global Contrast Enforcement */
+            .glass-panel { transition: all 0.3s ease; }
+            
+            /* Light Mode: Solid, High Contrast */
+            html:not(.dark) .glass-panel {
+                background: rgba(255, 255, 255, 0.95);
+                border: 1px solid #e2e8f0;
+                color: #0f172a; /* Slate 900 - Pitch Black text */
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3 {
+                color: #0f172a !important; /* Force black headings */
+            }
+            html:not(.dark) p, html:not(.dark) span {
+                color: #334155; /* Slate 700 - Dark Gray text */
+            }
 
-        {/* LIGHT MODE: "The Executive Suite" (Clean, Trustworthy, Minimal) */}
-        {/* Subtle, slow-moving gradient mesh, no blobs. Just professional atmosphere. */}
+            /* Dark Mode: Translucent, Neon */
+            html.dark .glass-panel {
+                background: rgba(20, 20, 25, 0.6);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #f8fafc;
+                box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.1);
+            }
+        `}</style>
+
+        {/* LIGHT MODE BACKGROUND */}
         <div className="absolute inset-0 opacity-100 dark:opacity-0 transition-opacity duration-1000">
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-white to-white"></div>
-            <div className="absolute bottom-0 right-0 w-full h-[50%] bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-blue-50 via-transparent to-transparent"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-blue-100 via-white to-white"></div>
         </div>
 
-        {/* DARK MODE: "The Gamer's Den" (Vibrant, Neon, Dynamic) */}
-        {/* Active blobs, noise, and grid for Gen Z appeal. */}
+        {/* DARK MODE BACKGROUND (The "Vibe") */}
         <div className="absolute inset-0 opacity-0 dark:opacity-100 transition-opacity duration-1000">
-            {/* Blob 1: Top Left */}
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] animate-float 
-                bg-indigo-600/30 mix-blend-screen"></div>
-
             {/* Blob 2: Top Right */}
             <div className="absolute top-[10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[120px] animate-float animation-delay-2000 
                 bg-purple-600/20 mix-blend-screen"></div>
@@ -61,7 +85,7 @@ export const AnimatedBackground = () => (
 
 export const Layout = ({ children }) => {
     return (
-        <div className="relative min-h-screen text-gray-900 dark:text-white font-sans selection:bg-indigo-500/30">
+        <div className="relative min-h-screen font-sans">
             <GlobalStyles />
             <AnimatedBackground />
             <div className="relative z-10">

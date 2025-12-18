@@ -81,7 +81,7 @@ export const Dashboard = ({ user, zenMode }) => {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-                <div className={`col-span-1 lg:col-span-2 bg-card text-card-foreground border border-border p-8 rounded-3xl ${zenMode ? 'bg-emerald-950/90' : 'bg-card'} transition-colors duration-500 shadow-sm relative overflow-hidden`}>
+                <div className={`col-span-1 lg:col-span-2 glass-panel p-8 rounded-3xl ${zenMode ? 'bg-emerald-900' : 'bg-indigo-900'} text-white transition-colors duration-500 shadow-2xl relative overflow-hidden`}>
                     {/* Portfolio Value Card - Kept Dark as it's a feature card */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
@@ -102,7 +102,7 @@ export const Dashboard = ({ user, zenMode }) => {
                     </div>
                 </div>
 
-                <div className="bg-card text-card-foreground border border-border p-6 rounded-3xl flex flex-col items-center justify-center shadow-sm">
+                <div className="glass-panel text-card-foreground border border-border p-6 rounded-3xl flex flex-col items-center justify-center shadow-sm">
                     <h3 className="font-heading font-bold text-sm mb-4 self-start flex items-center gap-2"><PieChartIcon size={16} /> Asset Allocation</h3>
                     {holdings.length > 0 ? (
                         <div className="h-[180px] w-full">
@@ -120,21 +120,21 @@ export const Dashboard = ({ user, zenMode }) => {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 bg-card text-card-foreground border border-border p-6 rounded-3xl shadow-sm">
-                    <h3 className="font-bold text-foreground mb-6">Holdings</h3>
+                <div className="md:col-span-2 glass-panel p-6 rounded-3xl relative">
+                    <h3 className="font-bold mb-6">Holdings</h3>
                     {holdings.length === 0 ? <p className="text-gray-500 text-sm">No active investments found.</p> : (
                         <div className="space-y-4">
                             {holdings.map((h, i) => (
-                                <div key={i} className="flex justify-between items-center p-4 rounded-2xl border border-border hover:border-primary transition-colors bg-background/50">
+                                <div key={i} className="flex justify-between items-center p-4 rounded-2xl border border-black/5 dark:border-white/10 hover:border-indigo-500 transition-colors bg-black/5 dark:bg-white/5">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold">{h.name?.[0]}</div>
+                                        <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">{h.name?.[0]}</div>
                                         <div>
-                                            <p className="font-bold text-foreground text-sm line-clamp-1">{h.name}</p>
+                                            <p className="font-bold text-sm line-clamp-1">{h.name}</p>
                                             <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">NAV: ₹{h.nav}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className={`font-mono font-bold text-gray-900 dark:text-white ${zenMode ? 'blur-sm' : ''}`}>₹{Math.round(h.current).toLocaleString()}</div>
+                                        <div className={`font-mono font-bold ${zenMode ? 'blur-sm' : ''}`}>₹{Math.round(h.current).toLocaleString()}</div>
                                         <div className={`text-[10px] font-bold ${h.current >= h.invested ? 'text-green-500' : 'text-red-500'}`}>{((h.current - h.invested) / h.invested * 100).toFixed(1)}%</div>
                                     </div>
                                 </div>

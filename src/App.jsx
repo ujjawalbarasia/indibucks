@@ -59,7 +59,7 @@ const AppContent = () => {
 
       {/* Navbar */}
       <nav className="fixed w-full z-50 top-4 px-4">
-        <div className="max-w-5xl mx-auto rounded-full px-6 h-16 flex items-center justify-between shadow-2xl backdrop-blur-xl bg-background/80 border border-border">
+        <div className="max-w-5xl mx-auto glass-panel rounded-full px-6 h-16 flex items-center justify-between shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-black/60">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg"><TrendingUp size={20} /></div>
             <span className="text-xl font-black tracking-tighter dark:text-white">IndiBucks</span>
