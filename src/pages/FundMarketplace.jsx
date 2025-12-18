@@ -8,9 +8,9 @@ const QuickCollections = ({ onSelect }) => (
         {CONSTANTS.COLLECTIONS.map(c => {
             const Icon = c.icon;
             return (
-                <button key={c.id} onClick={onSelect} className="flex items-center gap-3 px-6 py-4 bg-card text-card-foreground rounded-2xl min-w-[180px] hover:bg-muted transition-all group border border-border hover:border-primary shadow-sm">
-                    <div className={`p-2 rounded-xl bg-primary/10 ${c.iconColor} group-hover:scale-110 transition`}><Icon size={20} /></div>
-                    <div className="text-left"><p className="font-bold text-sm text-foreground">{c.label}</p><p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Collection</p></div>
+                <button key={c.id} onClick={onSelect} className="flex items-center gap-3 px-6 py-4 glass-panel rounded-2xl min-w-[180px] hover:bg-white/50 dark:hover:bg-white/10 transition-all group border border-transparent hover:border-indigo-500 shadow-lg">
+                    <div className={`p-2 rounded-xl bg-indigo-50 dark:bg-white/10 ${c.iconColor} group-hover:scale-110 transition`}><Icon size={20} /></div>
+                    <div className="text-left"><p className="font-bold text-sm">{c.label}</p><p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Collection</p></div>
                 </button>
             )
         })}
@@ -64,8 +64,8 @@ export const FundMarketplace = ({ onInvestClick }) => {
 
     return (
         <div className="pt-28 pb-24 px-4 max-w-7xl mx-auto min-h-screen">
-            <h1 className="text-4xl font-heading font-black mb-2 text-foreground">Mutual Funds Exchange</h1>
-            <p className="text-muted-foreground mb-10 font-medium">Access 20,000+ real schemes directly from AMCs.</p>
+            <h1 className="text-4xl font-heading font-black mb-2">Mutual Funds Exchange</h1>
+            <p className="text-gray-500 mb-10 font-medium">Access 20,000+ real schemes directly from AMCs.</p>
             <div className="relative mb-12">
                 <Search className="absolute left-5 top-5 text-gray-400" />
                 <input value={search} onChange={e => { setSearch(e.target.value); fetchFunds(e.target.value); }} placeholder="Search real schemes (e.g. HDFC, Index, Bluechip)..." className="w-full pl-14 pr-6 py-5 rounded-2xl glass-panel bg-white/50 dark:bg-white/5 border-none outline-none dark:text-white shadow-xl focus:ring-2 focus:ring-indigo-500 transition" />
@@ -75,9 +75,9 @@ export const FundMarketplace = ({ onInvestClick }) => {
             {loading ? <div className="py-20 flex justify-center"><Loader className="animate-spin text-indigo-600" size={40} /></div> : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {funds.map(f => (
-                        <div key={f.code} className="bg-card text-card-foreground p-6 rounded-3xl border border-border hover:border-primary transition-all flex flex-col justify-between group shadow-sm">
-                            <div><span className="text-[10px] font-black uppercase bg-primary/10 text-primary px-3 py-1 rounded-lg mb-4 inline-block">{f.category}</span><h3 className="text-xl font-heading font-bold text-foreground mb-2 leading-tight line-clamp-2">{f.name}</h3><p className="text-[10px] text-muted-foreground uppercase font-bold mb-6">{f.house}</p></div>
-                            <div className="flex justify-between items-end border-t border-border pt-6"><div><p className="text-[10px] text-muted-foreground mb-1 font-bold uppercase">NAV (Live)</p><p className="text-2xl font-mono font-black text-foreground">₹{f.nav}</p></div><button onClick={() => onInvestClick(f)} className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-bold text-sm hover:scale-105 transition shadow-lg">Buy Scheme</button></div>
+                        <div key={f.code} className="glass-panel p-6 rounded-3xl border border-black/5 dark:border-white/10 hover:border-indigo-500 transition-all flex flex-col justify-between group shadow-xl">
+                            <div><span className="text-[10px] font-black uppercase bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-lg mb-4 inline-block">{f.category}</span><h3 className="text-xl font-heading font-bold mb-2 leading-tight line-clamp-2">{f.name}</h3><p className="text-[10px] text-gray-500 uppercase font-bold mb-6">{f.house}</p></div>
+                            <div className="flex justify-between items-end border-t border-black/5 dark:border-white/10 pt-6"><div><p className="text-[10px] text-gray-400 mb-1 font-bold uppercase">NAV (Live)</p><p className="text-2xl font-mono font-black">₹{f.nav}</p></div><button onClick={() => onInvestClick(f)} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:scale-105 transition shadow-lg shadow-indigo-500/30">Buy Scheme</button></div>
                         </div>
                     ))}
                 </div>

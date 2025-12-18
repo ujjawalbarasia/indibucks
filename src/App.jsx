@@ -85,7 +85,7 @@ const AppContent = () => {
 
         {/* Mobile Menu Overlay */}
         {isMenuOpen && (
-          <div className="md:hidden absolute top-20 right-4 w-48 bg-card text-card-foreground border border-border p-4 rounded-2xl flex flex-col gap-2 z-50 animate-slide-up shadow-2xl">
+          <div className="md:hidden absolute top-20 right-4 w-48 glass-panel border border-white/10 p-4 rounded-2xl flex flex-col gap-2 z-50 animate-slide-up shadow-2xl bg-white/95 dark:bg-black/90 backdrop-blur-xl">
             {['funds', 'social', 'advisor', 'analyzer', 'boardroom', 'future', 'spend'].map(item => (
               <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className={`px-4 py-3 text-xs font-black uppercase text-left rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${view === item ? 'text-indigo-600' : 'text-gray-500'}`}>
                 {item === 'analyzer' ? 'Medic' : item}
