@@ -76,12 +76,12 @@ export const Dashboard = ({ user, zenMode }) => {
         <div className="pt-28 px-4 max-w-7xl mx-auto min-h-screen animate-slide-up">
             {showPanic && <PanicMode onClose={() => setShowPanic(false)} />}
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl titan-heading">My Portfolio</h1>
-                {!zenMode && <button onClick={() => setShowPanic(true)} className="flex items-center gap-2 text-red-500 font-bold border border-red-500/30 px-4 py-2 rounded-xl hover:bg-red-500/10"><AlertTriangle size={18} /> Panic Mode</button>}
+                <h1 className="text-3xl font-heading font-black text-foreground">My Portfolio</h1>
+                {!zenMode && <button onClick={() => setShowPanic(true)} className="flex items-center gap-2 text-destructive font-bold border border-destructive/30 px-4 py-2 rounded-xl hover:bg-destructive/10"><AlertTriangle size={18} /> Panic Mode</button>}
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-                <div className={`col-span-1 lg:col-span-2 titan-card p-8 rounded-3xl ${zenMode ? 'bg-emerald-900' : 'bg-indigo-900'} text-white transition-colors duration-500 shadow-2xl relative overflow-hidden`}>
+                <div className={`col-span-1 lg:col-span-2 bg-card text-card-foreground border border-border p-8 rounded-3xl ${zenMode ? 'bg-emerald-950/90' : 'bg-card'} transition-colors duration-500 shadow-sm relative overflow-hidden`}>
                     {/* Portfolio Value Card - Kept Dark as it's a feature card */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
@@ -102,8 +102,8 @@ export const Dashboard = ({ user, zenMode }) => {
                     </div>
                 </div>
 
-                <div className="titan-card flex flex-col items-center justify-center">
-                    <h3 className="titan-heading text-sm mb-4 self-start flex items-center gap-2"><PieChartIcon size={16} /> Asset Allocation</h3>
+                <div className="bg-card text-card-foreground border border-border p-6 rounded-3xl flex flex-col items-center justify-center shadow-sm">
+                    <h3 className="font-heading font-bold text-sm mb-4 self-start flex items-center gap-2"><PieChartIcon size={16} /> Asset Allocation</h3>
                     {holdings.length > 0 ? (
                         <div className="h-[180px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
@@ -120,16 +120,16 @@ export const Dashboard = ({ user, zenMode }) => {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 titan-card">
-                    <h3 className="titan-heading mb-6">Holdings</h3>
+                <div className="md:col-span-2 bg-card text-card-foreground border border-border p-6 rounded-3xl shadow-sm">
+                    <h3 className="font-bold text-foreground mb-6">Holdings</h3>
                     {holdings.length === 0 ? <p className="text-gray-500 text-sm">No active investments found.</p> : (
                         <div className="space-y-4">
                             {holdings.map((h, i) => (
-                                <div key={i} className="flex justify-between items-center p-4 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-indigo-500 transition-colors">
+                                <div key={i} className="flex justify-between items-center p-4 rounded-2xl border border-border hover:border-primary transition-colors bg-background/50">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">{h.name?.[0]}</div>
+                                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold">{h.name?.[0]}</div>
                                         <div>
-                                            <p className="font-bold text-gray-900 dark:text-white text-sm line-clamp-1">{h.name}</p>
+                                            <p className="font-bold text-foreground text-sm line-clamp-1">{h.name}</p>
                                             <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tighter">NAV: ₹{h.nav}</p>
                                         </div>
                                     </div>

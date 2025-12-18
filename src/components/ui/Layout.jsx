@@ -4,41 +4,10 @@ export const GlobalStyles = () => (
     <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
     body { font-family: 'Inter', sans-serif; overflow-x: hidden; transition: background-color 0.5s ease, color 0.5s ease; }
-    /* Hybrid Panel System */
-    .glass-panel { 
-        /* Light Mode: Solid Card Stock (Trust, Stability - for Older Investors) */
-        background: #ffffff !important; 
-        border: 1px solid #e2e8f0; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
-        color: #0f172a !important;
-    }
-    .dark .glass-panel { 
-        /* Dark Mode: Cyber Glass (Future, Tech - for Gen Z) */
-        background: rgba(10, 10, 15, 0.75) !important; 
-        backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1); 
-        box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.1); /* Subtle Indigo Glow */
-        color: #f1f5f9 !important;
-    }
-    
-    /* Input Fields Fix */
-    input, select, textarea {
-        background-color: rgba(255, 255, 255, 0.8) !important;
-        color: #0f172a !important;
-        border: 1px solid #cbd5e1 !important;
-    }
-    .dark input, .dark select, .dark textarea {
-        background-color: rgba(0, 0, 0, 0.4) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-    }
-    .dark input::placeholder { color: rgba(255,255,255,0.4) !important; }
-    
+    /* Semantic System handled by index.css and tailwind.config.js */
     .animate-slide-up { animation: slideUpFade 0.6s forwards; }
     @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .animate-float { animation: float 6s ease-in-out infinite; }
-    @keyframes float { 0% { transform: translate(0px, 0px); } 50% { transform: translate(20px, 20px); } 100% { transform: translate(0px, 0px); } }
     
     /* New Pulse Glow for Center Orb */
     @keyframes pulse-glow {

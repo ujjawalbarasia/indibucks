@@ -54,20 +54,21 @@ export const AIAdvisor = () => {
     return (
         <div className="pt-28 pb-4 px-4 max-w-4xl mx-auto h-[92vh] flex flex-col animate-slide-up">
             {/* Header */}
-            <div className="glass-panel p-4 rounded-t-3xl border-b dark:border-white/10 flex justify-between items-center bg-white/60 dark:bg-black/40 backdrop-blur-xl">
+            {/* Header */}
+            <div className="bg-card text-card-foreground p-4 rounded-t-3xl border-b border-border flex justify-between items-center bg-opacity-80 backdrop-blur-xl">
                 <div className="flex items-center gap-4">
                     <div className="relative">
                         <div className="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white shadow-lg">
                             <Sparkles size={24} className="text-white" />
                         </div>
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-black animate-pulse"></div>
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse"></div>
                     </div>
                     <div>
-                        <h2 className="font-black text-lg dark:text-white leading-none">IndiBuddy</h2>
-                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Always Online</span>
+                        <h2 className="font-heading font-black text-lg text-foreground leading-none">IndiBuddy</h2>
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Always Online</span>
                     </div>
                 </div>
-                <button onClick={() => setMessages([])} className="text-xs font-bold text-gray-400 hover:text-red-400 transition-colors">Clear Chat</button>
+                <button onClick={() => setMessages([])} className="text-xs font-bold text-muted-foreground hover:text-destructive transition-colors">Clear Chat</button>
             </div>
 
             {/* Chat Area */}
@@ -81,8 +82,8 @@ export const AIAdvisor = () => {
 
                         {/* Bubble */}
                         <div className={`p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm whitespace-pre-line ${m.sender === 'user'
-                                ? 'bg-indigo-600 text-white rounded-tr-none'
-                                : 'bg-white dark:bg-white/10 text-gray-800 dark:text-gray-200 rounded-tl-none border dark:border-white/5'
+                            ? 'bg-indigo-600 text-white rounded-tr-none'
+                            : 'bg-white dark:bg-white/10 text-gray-800 dark:text-gray-200 rounded-tl-none border dark:border-white/5'
                             }`}>
                             {m.text}
                         </div>

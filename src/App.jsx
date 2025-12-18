@@ -50,7 +50,7 @@ const AppContent = () => {
 
       {/* Navbar */}
       <nav className="fixed w-full z-50 top-4 px-4">
-        <div className="max-w-5xl mx-auto glass-panel rounded-full px-6 h-16 flex items-center justify-between shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-black/80">
+        <div className="max-w-5xl mx-auto rounded-full px-6 h-16 flex items-center justify-between shadow-2xl backdrop-blur-xl bg-background/80 border border-border">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg"><TrendingUp size={20} /></div>
             <span className="text-xl font-black tracking-tighter dark:text-white">IndiBucks</span>
@@ -76,7 +76,7 @@ const AppContent = () => {
 
         {/* Mobile Menu Overlay */}
         {isMenuOpen && (
-          <div className="md:hidden absolute top-20 right-4 w-48 glass-panel p-4 rounded-2xl flex flex-col gap-2 z-50 animate-slide-up shadow-2xl">
+          <div className="md:hidden absolute top-20 right-4 w-48 bg-card text-card-foreground border border-border p-4 rounded-2xl flex flex-col gap-2 z-50 animate-slide-up shadow-2xl">
             {['funds', 'social', 'advisor', 'analyzer', 'boardroom', 'future', 'spend'].map(item => (
               <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className={`px-4 py-3 text-xs font-black uppercase text-left rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${view === item ? 'text-indigo-600' : 'text-gray-500'}`}>
                 {item === 'analyzer' ? 'Medic' : item}
