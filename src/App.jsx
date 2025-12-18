@@ -55,7 +55,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "indibucks-cd137";
 const googleProvider = new GoogleAuthProvider();
-const apiKey = ""; // Gemini API Key
+const apiKey = import.meta.env.GEMINI;
 
 // PRODUCTION ENDPOINT: Points to Vercel Serverless Functions
 const BACKEND_API_URL = "/api"; 
@@ -1264,3 +1264,4 @@ const App = () => {
 };
 
 export default App;
+
