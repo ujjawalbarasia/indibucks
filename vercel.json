@@ -1,0 +1,16 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/register",
+            "destination": "/api/register.js"
+        },
+        {
+            "source": "/api/order",
+            "destination": "/api/order.js"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
