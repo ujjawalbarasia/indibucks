@@ -68,16 +68,16 @@ export const Boardroom = () => {
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 glass-panel rounded-3xl overflow-hidden flex flex-col relative h-[60vh]">
+            <div className="flex-1 bg-card text-card-foreground border border-border rounded-3xl overflow-hidden flex flex-col relative h-[60vh] shadow-xl">
                 {/* Header Avatars */}
-                <div className="flex justify-evenly p-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 backdrop-blur-md z-10">
+                <div className="flex justify-evenly p-4 border-b border-border bg-background/50 backdrop-blur-md z-10">
                     {Object.values(PERSONAS).map((p, i) => (
                         <div key={i} className="flex flex-col items-center opacity-80 hover:opacity-100 transition-opacity">
                             <div className={`w-12 h-12 rounded-full ${p.color} flex items-center justify-center text-white shadow-lg mb-2`}>
                                 <p.icon size={20} />
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-widest dark:text-white">{p.name}</span>
-                            <span className="text-[9px] text-gray-500">{p.role}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">{p.name}</span>
+                            <span className="text-[9px] text-muted-foreground">{p.role}</span>
                         </div>
                     ))}
                 </div>

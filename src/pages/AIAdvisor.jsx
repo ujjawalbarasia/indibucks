@@ -72,18 +72,18 @@ export const AIAdvisor = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 p-6 overflow-y-auto glass-panel border-t-0 border-b-0 bg-white/30 dark:bg-black/20 space-y-6 scrollbar-hide">
+            <div className="flex-1 p-6 overflow-y-auto bg-background/50 border-x border-border space-y-6 scrollbar-hide">
                 {messages.map((m, i) => (
                     <div key={i} className={`flex gap-4 ${m.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                         {/* Avatar */}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${m.sender === 'user' ? 'bg-gray-200 dark:bg-white/10' : 'bg-indigo-100 dark:bg-indigo-900/40'}`}>
-                            {m.sender === 'user' ? <User size={14} className="text-gray-600 dark:text-gray-300" /> : <Sparkles size={14} className="text-indigo-600 dark:text-indigo-400" />}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${m.sender === 'user' ? 'bg-muted' : 'bg-primary/20'}`}>
+                            {m.sender === 'user' ? <User size={14} className="text-muted-foreground" /> : <Sparkles size={14} className="text-primary" />}
                         </div>
 
                         {/* Bubble */}
                         <div className={`p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm whitespace-pre-line ${m.sender === 'user'
-                            ? 'bg-indigo-600 text-white rounded-tr-none'
-                            : 'bg-white dark:bg-white/10 text-gray-800 dark:text-gray-200 rounded-tl-none border dark:border-white/5'
+                            ? 'bg-primary text-primary-foreground rounded-tr-none'
+                            : 'bg-card text-card-foreground border border-border rounded-tl-none'
                             }`}>
                             {m.text}
                         </div>
@@ -106,7 +106,7 @@ export const AIAdvisor = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 glass-panel rounded-b-3xl border-t dark:border-white/10 bg-white/60 dark:bg-black/40 backdrop-blur-xl">
+            <div className="p-4 bg-card rounded-b-3xl border border-t-0 border-border backdrop-blur-xl">
                 {/* Quick Chips */}
                 {messages.length < 3 && !typing && (
                     <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide mb-2">
@@ -114,9 +114,9 @@ export const AIAdvisor = () => {
                             <button
                                 key={i}
                                 onClick={() => handleSend(s.text)}
-                                className="flex items-center gap-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 hover:border-indigo-200 transition-all whitespace-nowrap"
+                                className="flex items-center gap-2 bg-background border border-border px-4 py-2 rounded-full text-xs font-bold text-muted-foreground hover:bg-primary/10 hover:border-primary hover:text-primary transition-all whitespace-nowrap"
                             >
-                                <s.icon size={12} className="text-indigo-500" /> {s.text}
+                                <s.icon size={12} className="text-primary" /> {s.text}
                             </button>
                         ))}
                     </div>
@@ -127,12 +127,12 @@ export const AIAdvisor = () => {
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleSend()}
-                        className="flex-1 bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 p-4 rounded-xl outline-none focus:ring-2 ring-indigo-500 transition-all dark:text-white shadow-inner placeholder:text-gray-400"
+                        className="flex-1 bg-background border border-input p-4 rounded-xl outline-none focus:ring-2 ring-ring transition-all text-foreground shadow-inner placeholder:text-muted-foreground"
                         placeholder="Ask anything..."
                     />
                     <button
                         onClick={() => handleSend()}
-                        className="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-indigo-500/30 active:scale-95"
+                        className="w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-95"
                     >
                         {typing ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={20} />}
                     </button>
