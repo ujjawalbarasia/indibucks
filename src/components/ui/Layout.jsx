@@ -4,9 +4,34 @@ export const GlobalStyles = () => (
     <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
     body { font-family: 'Inter', sans-serif; overflow-x: hidden; transition: background-color 0.5s ease, color 0.5s ease; }
-    h1, h2, h3, h4, h5, h6, button, .font-heading { font-family: 'Outfit', sans-serif; }
-    .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); }
-    .dark .glass-panel { background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+    /* High Contrast Glass Panels */
+    .glass-panel { 
+        background: rgba(255, 255, 255, 0.90); /* Higher opacity for Light Mode */
+        backdrop-filter: blur(24px); 
+        border: 1px solid rgba(226, 232, 240, 0.8); 
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); 
+        color: #0f172a; /* Slate-900 */
+    }
+    .dark .glass-panel { 
+        background: rgba(10, 10, 15, 0.75); /* Darker background for Dark Mode */
+        border: 1px solid rgba(255, 255, 255, 0.1); 
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4); 
+        color: #f1f5f9; /* Slate-100 */
+    }
+    
+    /* Input Fields Fix */
+    input, select, textarea {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    .dark input, .dark select, .dark textarea {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+    }
+    .dark input::placeholder { color: rgba(255,255,255,0.4) !important; }
+    
     .animate-slide-up { animation: slideUpFade 0.6s forwards; }
     @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .scrollbar-hide::-webkit-scrollbar { display: none; }

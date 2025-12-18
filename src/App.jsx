@@ -35,7 +35,6 @@ const AppContent = () => {
       case 'funds': return <FundMarketplace onInvestClick={(f) => { if (!user) setShowLogin(true); else setSelectedFund(f); }} />;
       case 'social': return <SocialTribes />;
       case 'advisor': return <AIAdvisor />;
-      case 'advisor': return <AIAdvisor />;
       case 'analyzer': return <PortfolioAnalyzer />;
       case 'boardroom': return <Boardroom />;
       case 'future': return <FutureYou user={user} />;
@@ -74,6 +73,17 @@ const AppContent = () => {
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-gray-400"><Menu /></button>
           </div>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div className="md:hidden absolute top-20 right-4 w-48 glass-panel p-4 rounded-2xl flex flex-col gap-2 z-50 animate-slide-up shadow-2xl">
+            {['funds', 'social', 'advisor', 'analyzer', 'boardroom', 'future', 'spend'].map(item => (
+              <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className={`px-4 py-3 text-xs font-black uppercase text-left rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${view === item ? 'text-indigo-600' : 'text-gray-500'}`}>
+                {item === 'analyzer' ? 'Medic' : item}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}

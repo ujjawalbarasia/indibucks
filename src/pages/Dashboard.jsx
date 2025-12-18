@@ -4,7 +4,7 @@ import { query, collection, orderBy, onSnapshot } from 'firebase/firestore';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { db, appId } from '../utils/firebase';
 import { BSEService } from '../services/bse';
-import { MarketSentiment, SIPTurbocharger, GoalDNA } from '../components/widgets/Widgets';
+import { MarketSentiment, SIPTurbocharger, GoalDNA, RiskRadar } from '../components/widgets/Widgets';
 import { NewsFeed } from '../components/widgets/NewsFeed';
 import { PanicMode } from '../components/modals/InvestmentModals';
 import { VoiceAgent } from '../components/ai/VoiceAgent';
@@ -143,6 +143,7 @@ export const Dashboard = ({ user, zenMode }) => {
                 </div>
                 <div>
                     <MarketSentiment />
+                    <div className="mt-6"><RiskRadar /></div>
                     <div className="mt-6"><NewsFeed /></div>
                     <div className="mt-6"><SIPTurbocharger /></div>
                 </div>
