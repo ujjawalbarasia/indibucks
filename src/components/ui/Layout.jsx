@@ -7,18 +7,18 @@ export const GlobalStyles = () => (
     /* Hybrid Panel System */
     .glass-panel { 
         /* Light Mode: Solid Card Stock (Trust, Stability - for Older Investors) */
-        background: #ffffff; 
+        background: #ffffff !important; 
         border: 1px solid #e2e8f0; 
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
-        color: #0f172a;
+        color: #0f172a !important;
     }
     .dark .glass-panel { 
         /* Dark Mode: Cyber Glass (Future, Tech - for Gen Z) */
-        background: rgba(10, 10, 15, 0.75); 
+        background: rgba(10, 10, 15, 0.75) !important; 
         backdrop-filter: blur(24px);
         border: 1px solid rgba(255, 255, 255, 0.1); 
         box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.1); /* Subtle Indigo Glow */
-        color: #f1f5f9;
+        color: #f1f5f9 !important;
     }
     
     /* Input Fields Fix */

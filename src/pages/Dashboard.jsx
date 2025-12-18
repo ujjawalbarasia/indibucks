@@ -101,7 +101,7 @@ export const Dashboard = ({ user, zenMode }) => {
                     </div>
                 </div>
 
-                <div className="glass-panel p-6 rounded-3xl bg-white dark:bg-white/5 flex flex-col items-center justify-center">
+                <div className="glass-panel p-6 rounded-3xl flex flex-col items-center justify-center">
                     <h3 className="font-bold dark:text-white text-sm mb-4 self-start flex items-center gap-2"><PieChartIcon size={16} /> Asset Allocation</h3>
                     {holdings.length > 0 ? (
                         <div className="h-[180px] w-full">
@@ -124,7 +124,7 @@ export const Dashboard = ({ user, zenMode }) => {
                     {holdings.length === 0 ? <p className="text-gray-500 text-sm">No active investments found.</p> : (
                         <div className="space-y-4">
                             {holdings.map((h, i) => (
-                                <div key={i} className="flex justify-between items-center p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border dark:border-white/5 hover:border-indigo-500 transition-colors">
+                                <div key={i} className="flex justify-between items-center p-4 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-indigo-500 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-600 font-bold">{h.name?.[0]}</div>
                                         <div>
