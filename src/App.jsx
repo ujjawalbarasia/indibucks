@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Leaf, EyeOff, Sun, Moon, LogOut, User, Menu, TrendingUp, ScanEye } from 'lucide-react';
+import { Leaf, EyeOff, Sun, Moon, LogOut, User, Menu, TrendingUp, Eye } from 'lucide-react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { GlobalStyles, AnimatedBackground } from './components/ui/Layout';
 import { IndiCommand } from './components/ui/IndiCommand';

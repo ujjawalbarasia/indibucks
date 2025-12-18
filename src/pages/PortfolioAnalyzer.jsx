@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertTriangle, ArrowRight, X, ScanEye, ShieldCheck } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertTriangle, ArrowRight, X, Eye, Shield } from 'lucide-react';
 import { useGemini } from '../hooks/useGemini';
 import { Layout } from '../components/ui/Layout';
 
@@ -21,7 +21,7 @@ export const PortfolioAnalyzer = () => {
                 ],
                 actions: [
                     { title: "Switch to Direct (Save 1.2%)", icon: CheckCircle },
-                    { title: "Consolidate Bluechip Funds", icon: ShieldCheck }
+                    { title: "Consolidate Bluechip Funds", icon: Shield }
                 ]
             };
             setReport(mockAnalysis);
@@ -46,7 +46,7 @@ export const PortfolioAnalyzer = () => {
                         {analyzing ? (
                             <>
                                 <div className="relative mb-6">
-                                    <ScanEye className="w-16 h-16 text-indigo-500 animate-pulse" />
+                                    <Eye className="w-16 h-16 text-indigo-500 animate-pulse" />
                                     <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full animate-ping"></div>
                                 </div>
                                 <h3 className="text-xl font-bold mb-2">Scanning Portfolio...</h3>
