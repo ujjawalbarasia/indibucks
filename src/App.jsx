@@ -14,6 +14,7 @@ import { FutureYou } from './components/ai/FutureYou';
 import { SpendAnalyzer } from './components/ai/SpendAnalyzer';
 import { LoginModal, KYCFlow } from './components/modals/AuthModals';
 import { InvestModal, FundDetailsModal } from './components/modals/InvestmentModals';
+import { Analytics, EVENTS } from './services/analytics';
 
 const AppContent = () => {
   const { user, logout, view, setView, showLogin, setShowLogin, loginGoogle } = useAppContext();
@@ -31,6 +32,11 @@ const AppContent = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Analytics Effect
+  React.useEffect(() => {
+    Analytics.page(view);
+  }, [view]);
 
   // Command Handler
   const handleIndiCommand = useCallback((action) => {

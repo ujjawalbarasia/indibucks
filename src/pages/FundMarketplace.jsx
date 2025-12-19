@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Loader, TrendingUp, FileText, Coins, Crown, Layers, Sprout, ArrowUpRight, Play } from 'lucide-react';
 import { CONSTANTS } from '../utils/constants';
+import { MASTER_SCHEMES } from '../utils/schemes';
 import { BSEService } from '../services/bse';
 
 const QuickCollections = ({ onSelect }) => (
@@ -45,7 +46,6 @@ export const FundMarketplace = ({ onInvestClick }) => {
     const fetchFunds = useCallback(async (q = '') => {
         setLoading(true);
         try {
-            const codes = q.length > 2 ? [] : CONSTANTS.FEATURED_FUNDS;
             if (q.length > 2) {
                 const res = await fetch(`https://api.mfapi.in/mf/search?q=${q}`);
                 const data = await res.json();
@@ -53,6 +53,10 @@ export const FundMarketplace = ({ onInvestClick }) => {
                 const detailed = await BSEService.getFunds(top5);
                 setFunds(detailed);
             } else {
+                // Use local master schemes directly as they have the correct data structure
+                // But we might want live NAVs. BSEService.getFunds fetches live NAVs.
+                // So let's extract codes from MASTER_SCHEMES.
+                const codes = MASTER_SCHEMES.map(s => s.code);
                 const detailed = await BSEService.getFunds(codes);
                 setFunds(detailed);
             }

@@ -40,6 +40,14 @@ export const KYCFlow = ({ user, onComplete }) => {
             <div className="glass-panel p-8 rounded-3xl w-full max-w-md bg-white dark:bg-[#111]">
                 <h2 className="text-2xl font-black mb-1 dark:text-white text-center">BSE eKYC Setup</h2>
                 <p className="text-xs text-gray-500 text-center mb-8">Paperless Verification • Secure & Encrypted</p>
+
+                {/* Progress Bar */}
+                <div className="flex gap-2 mb-8">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-white/10'}`}></div>
+                    ))}
+                </div>
+
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto scrollbar-hide">
                     {step === 1 && (
                         <>

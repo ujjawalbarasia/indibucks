@@ -8,61 +8,141 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db, appId } from '../../utils/firebase';
 
 export const InvestModal = ({ fund, onClose, user, onSuccess }) => {
+    const [step, setStep] = useState(1); // 1: Amount, 2: Mandate (if SIP), 3: Review
     const [amount, setAmount] = useState(5000);
+    const [mandateData, setMandateData] = useState({ bankAccount: '', ifsc: '', maxAmount: 100000, type: 'U' }); // U: UPI, I: NetBanking
+    const [mandateId, setMandateId] = useState(null);
     const [loading, setLoading] = useState(false);
-    const { view, setView } = useAppContext(); // For redirect if needed, though we use onSuccess here.
+
+    // Determine if SIP based on user intent (Simplification: Default to SIP for now unless toggle added)
+    // For this implementation, we assume Lumpsum unless we add a toggle. 
+    // Wait, the requirement implies SIP Mandate flow. Let's add a toggle or assume SIP.
+    // Let's add a toggle for SIP/Lumpsum.
+    const [isSip, setIsSip] = useState(true);
+
+    const handleCreateMandate = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch PCC/UCC
+            let ucc = "DEMO-USER-001";
+            const kycSnap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'kyc', 'status'));
+            if (kycSnap.exists() && kycSnap.data().ucc) ucc = kycSnap.data().ucc;
+
+            // 2. Call Real API
+            const res = await BSEService.createMandate({ ...mandateData, amount: mandateData.maxAmount, ucc }, user.uid);
+
+            if (res.success) {
+                setMandateId(res.mandateId);
+                setStep(3); // Go to Review/Execute
+            } else {
+                alert("Mandate Creation Failed: " + res.message);
+            }
+        } catch (e) {
+            alert(e.message);
+        }
+        setLoading(false);
+    };
 
     const handleInvest = async () => {
         setLoading(true);
-
-        // 1. Fetch Real UCC
-        let ucc = "DEMO-USER-001"; // Fallback
         try {
+            let ucc = "DEMO-USER-001";
             const kycSnap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'kyc', 'status'));
-            if (kycSnap.exists() && kycSnap.data().ucc) {
-                ucc = kycSnap.data().ucc;
-            }
-        } catch (e) { console.warn("Failed to fetch UCC", e); }
+            if (kycSnap.exists() && kycSnap.data().ucc) ucc = kycSnap.data().ucc;
 
-        const orderData = {
-            fundCode: fund.code, // BSE Scheme Code
-            fundName: fund.name,
-            amount: Number(amount),
-            ucc: ucc,
-            purchaseNav: Number(fund.nav) || 0, // Store NAV for returns calc
-            units: (Number(amount) / (Number(fund.nav) || 1)).toFixed(4) // Store estimated units
-        };
+            const orderData = {
+                fundCode: fund.code,
+                fundName: fund.name,
+                amount: Number(amount),
+                ucc: ucc,
+                purchaseNav: Number(fund.nav) || 0,
+                units: (Number(amount) / (Number(fund.nav) || 1)).toFixed(4),
+                mandateId: isSip ? mandateId : null
+            };
 
-        const res = await BSEService.placeOrder(orderData, user.uid);
-
-        setLoading(false);
-        if (res.success) {
+            const res = await BSEService.placeOrder(orderData, user.uid);
             onSuccess(res);
             onClose();
-            // alert("Order Placed! Check Dashboard."); 
-        } else {
-            alert("Order Failed: " + res.message);
+        } catch (e) {
+            alert(e.message);
         }
+        setLoading(false);
     };
 
     return (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-slide-up">
             <div className="glass-panel p-8 rounded-3xl w-full max-w-sm bg-white dark:bg-[#111] relative">
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20} /></button>
+
+                {/* Header */}
                 <div className="mb-6">
-                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-1 rounded uppercase">Lumpsum</span>
+                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2 py-1 rounded uppercase">{isSip ? 'SIP Investment' : 'Lumpsum'}</span>
                     <h2 className="text-xl font-bold mt-2 dark:text-white leading-tight">{fund.name}</h2>
                 </div>
-                <div className="mb-8">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Investment Amount</label>
-                    <div className="flex items-center gap-2 mt-2 border-b-2 border-indigo-500 pb-2">
-                        <span className="text-2xl font-bold dark:text-white">₹</span>
-                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-transparent text-4xl font-black outline-none dark:text-white" />
+
+                {/* Step 1: Amount & Mode */}
+                {step === 1 && (
+                    <div className="space-y-6">
+                        <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
+                            <button onClick={() => setIsSip(true)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${isSip ? 'bg-white dark:bg-white/10 shadow text-indigo-600' : 'text-gray-500'}`}>Start SIP</button>
+                            <button onClick={() => setIsSip(false)} className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${!isSip ? 'bg-white dark:bg-white/10 shadow text-indigo-600' : 'text-gray-500'}`}>One-Time</button>
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Amount (₹)</label>
+                            <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full bg-transparent text-4xl font-black outline-none dark:text-white mt-2" />
+                        </div>
+                        <button onClick={() => isSip ? setStep(2) : setStep(3)} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2">
+                            Next: {isSip ? "Setup AutoPay" : "Payment"}
+                        </button>
                     </div>
-                </div>
-                <button onClick={handleInvest} disabled={loading} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold flex justify-center items-center gap-2">
-                    {loading ? <Loader className="animate-spin" /> : <><Zap size={18} /> Pay & Invest</>}
-                </button>
+                )}
+
+                {/* Step 2: Mandate (Only for SIP) */}
+                {step === 2 && (
+                    <div className="space-y-4">
+                        <h3 className="font-bold dark:text-white">Setup AutoPay (eMandate)</h3>
+                        <p className="text-xs text-gray-500">Required for automatic monthly deductions.</p>
+
+                        <div><label className="text-[10px] font-bold text-gray-400 uppercase">Bank Account No.</label><input value={mandateData.bankAccount} onChange={e => setMandateData({ ...mandateData, bankAccount: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 border dark:border-white/10 p-3 rounded-xl dark:text-white font-mono mt-1 outline-none" placeholder="1234567890" /></div>
+                        <div><label className="text-[10px] font-bold text-gray-400 uppercase">IFSC Code</label><input value={mandateData.ifsc} onChange={e => setMandateData({ ...mandateData, ifsc: e.target.value.toUpperCase() })} className="w-full bg-gray-50 dark:bg-white/5 border dark:border-white/10 p-3 rounded-xl dark:text-white font-mono uppercase mt-1 outline-none" placeholder="HDFC000123" /></div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={() => setMandateData({ ...mandateData, type: 'U' })} className={`p-3 border rounded-xl flex flex-col items-center gap-1 ${mandateData.type === 'U' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-white/10'}`}><Zap size={16} /><span className="text-[10px] font-bold">UPI AutoPay</span></button>
+                            <button onClick={() => setMandateData({ ...mandateData, type: 'I' })} className={`p-3 border rounded-xl flex flex-col items-center gap-1 ${mandateData.type === 'I' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-white/10'}`}><Target size={16} /><span className="text-[10px] font-bold">NetBanking</span></button>
+                        </div>
+
+                        <button onClick={handleCreateMandate} disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2">
+                            {loading ? <Loader className="animate-spin" /> : "Verify & Create Mandate"}
+                        </button>
+                    </div>
+                )}
+
+                {/* Step 3: Confirmation */}
+                {step === 3 && (
+                    <div className="space-y-6">
+                        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-500/20 text-center">
+                            <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                            <p className="text-sm font-bold text-green-700 dark:text-green-300">Ready to Invest</p>
+                            {isSip && <p className="text-xs text-green-600 dark:text-green-400 mt-1">Mandate ID: {mandateId}</p>}
+                        </div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Amount</span><span className="font-bold dark:text-white">₹{amount}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500">Mode</span><span className="font-bold dark:text-white">{isSip ? 'Monthly SIP' : 'Lumpsum'}</span></div>
+
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
+                            <input type="checkbox" id="tnc" className="mt-1" onChange={(e) => {
+                                const btn = document.getElementById('confirm-btn');
+                                if (btn) btn.disabled = !e.target.checked;
+                            }} />
+                            <label htmlFor="tnc" className="text-[10px] text-gray-500 leading-tight">
+                                I confirm that I have read the Scheme Information Document (SID) and agree to the <span className="underline cursor-pointer">Terms & Conditions</span>. I understand that I am investing in a Regular Plan.
+                            </label>
+                        </div>
+
+                        <button id="confirm-btn" disabled onClick={handleInvest} className="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {loading ? <Loader className="animate-spin" /> : <><Zap size={18} /> Confirm & Pay</>}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

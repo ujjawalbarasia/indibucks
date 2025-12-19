@@ -9,7 +9,10 @@ const SUGGESTIONS = [
     { text: "Market Outlook?", icon: Sparkles }
 ];
 
+import { AppContext } from '../context/AppContext';
+
 export const AIAdvisor = () => {
+    const { user } = React.useContext(AppContext);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [typing, setTyping] = useState(false);
@@ -38,6 +41,7 @@ export const AIAdvisor = () => {
 
         const systemPrompt = `
             You are IndiBuddy, a witty, Gen-Z friendly financial friend.
+            User Name: ${user?.displayName || 'Friend'}
             - 🚫 NO long paragraphs. Max 2-3 short sentences per bubble.
             - 🚫 NO financial jargon without explaining it simply.
             - ✅ Use Emojis used frequently (🚀, 💰, 📉).
