@@ -24,14 +24,10 @@ const AppContent = () => {
   const [selectedFund, setSelectedFund] = useState(null);
   const [showingKyc, setShowingKyc] = useState(false);
 
-  // Theme Toggle Effect - CRITICAL FOR TAILWIND DARK MODE
+  // Force Dark Mode always
   React.useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
+    document.documentElement.classList.add('dark');
+  }, []);
 
   // Analytics Effect
   React.useEffect(() => {
@@ -59,54 +55,63 @@ const AppContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
-      <GlobalStyles />
-      <AnimatedBackground />
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-indigo-500/30">
+      {/* Dynamic Background Nebula */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-purple-900/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-indigo-900/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        <div className="absolute top-[20%] right-[20%] w-[30vw] h-[30vw] bg-blue-900/10 rounded-full blur-[100px] animate-float"></div>
+      </div>
 
-      {/* Navbar */}
-      <nav className="fixed w-full z-50 top-4 px-4">
-        <div className="max-w-5xl mx-auto glass-panel rounded-full px-6 h-16 flex items-center justify-between shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-black/60">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg"><TrendingUp size={20} /></div>
-            <span className="text-xl font-black tracking-tighter dark:text-white">IndiBucks</span>
+      <GlobalStyles />
+
+      {/* Navbar - Floating Glass Pill */}
+      <nav className="fixed w-full z-50 top-6 px-4">
+        <div className="max-w-4xl mx-auto glass-panel rounded-full px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('home')}>
+            {/* Logo - Simple Geometric */}
+            <div className="w-8 h-8 bg-white text-black rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.4)]">
+              <TrendingUp size={20} strokeWidth={3} />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-white">IndiBucks Pro</span>
           </div>
-          <div className="hidden md:flex items-center gap-2">
-            {['funds', 'social', 'advisor', 'analyzer', 'boardroom', 'future', 'spend'].map(item => (
-              <button key={item} onClick={() => setView(item)} className={`px-4 py-2 text-xs font-black uppercase transition-colors ${view === item ? 'text-indigo-600' : 'text-gray-400 hover:text-indigo-400'}`}>{item === 'analyzer' ? 'Medic' : item}</button>
+
+          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5">
+            {['funds', 'advisor', 'dashboard'].map(item => (
+              <button key={item} onClick={() => setView(item)} className={`px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 ${view === item ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                {item}
+              </button>
             ))}
-            {user && !user.isAnonymous && <button onClick={() => setView('dashboard')} className={`px-4 py-2 text-xs font-black uppercase transition-colors ${view === 'dashboard' ? 'text-indigo-600' : 'text-gray-400'}`}>Dashboard</button>}
           </div>
+
           <div className="flex items-center gap-4">
-            <button onClick={() => setZenMode(!zenMode)} className={`p-2 rounded-full transition-all ${zenMode ? 'bg-teal-500 text-white' : 'text-gray-400'}`}>{zenMode ? <Leaf size={20} /> : <EyeOff size={20} />}</button>
-            <button onClick={() => setIsDark(!isDark)} className="p-2 rounded-full text-gray-400 hover:bg-white/10">{isDark ? <Sun size={20} /> : <Moon size={20} />}</button>
             {user && !user.isAnonymous ? (
-              <div className="flex items-center gap-3 pl-4 border-l dark:border-white/10">
-                <button onClick={() => setView('dashboard')} className="w-10 h-10 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center border-2 border-indigo-500 shadow-sm">{user.photoURL ? <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" /> : <User className="text-indigo-600" />}</button>
-                <button onClick={logout} className="text-gray-400 hover:text-red-500 transition-colors"><LogOut size={20} /></button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setView('dashboard')} className="w-10 h-10 rounded-full overflow-hidden border border-white/20 hover:border-white transition p-0.5"><img src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} alt="Profile" className="w-full h-full object-cover rounded-full" /></button>
               </div>
-            ) : <button onClick={() => setShowLogin(true)} className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black rounded-full text-xs font-bold shadow-lg">LOGIN</button>}
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-gray-400"><Menu /></button>
+            ) : <button onClick={() => setShowLogin(true)} className="px-6 py-2 bg-white text-black rounded-full text-xs font-black tracking-wider hover:scale-105 transition shadow-[0_0_15px_rgba(255,255,255,0.3)]">LOGIN</button>}
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-white"><Menu /></button>
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden absolute top-20 right-4 w-48 glass-panel border border-white/10 p-4 rounded-2xl flex flex-col gap-2 z-50 animate-slide-up shadow-2xl bg-white/95 dark:bg-black/90 backdrop-blur-xl">
-            {['funds', 'social', 'advisor', 'analyzer', 'boardroom', 'future', 'spend'].map(item => (
-              <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className={`px-4 py-3 text-xs font-black uppercase text-left rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${view === item ? 'text-indigo-600' : 'text-gray-500'}`}>
-                {item === 'analyzer' ? 'Medic' : item}
+          <div className="md:hidden absolute top-24 right-4 w-64 glass-panel p-2 rounded-2xl flex flex-col gap-1 z-50 animate-slide-up">
+            {['funds', 'advisor', 'dashboard'].map(item => (
+              <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className={`px-6 py-4 text-sm font-bold uppercase text-left rounded-xl ${view === item ? 'bg-white text-black' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                {item}
               </button>
             ))}
           </div>
         )}
       </nav>
 
-      {/* Main Content */}
-      <main>
+      {/* Main Content Wrapper */}
+      <main className="relative z-10 pt-32 min-h-screen">
         {renderView()}
       </main>
 
-      {/* Modals & Overlays */}
+      {/* Modals */}
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} onGoogleLogin={() => { loginGoogle().then(() => setShowLogin(false)); }} />}
       {showingKyc && <KYCFlow user={user} onComplete={() => setShowingKyc(false)} />}
       {selectedFund && <InvestModal fund={selectedFund} user={user} onClose={() => setSelectedFund(null)} onSuccess={() => { setView('dashboard'); setSelectedFund(null); }} />}
