@@ -76,10 +76,10 @@ const AppContent = () => {
             <span className="text-lg font-bold tracking-tight text-white">IndiBucks Pro</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5">
-            {['funds', 'advisor', 'dashboard'].map(item => (
-              <button key={item} onClick={() => setView(item)} className={`px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 ${view === item ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                {item}
+          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5 overflow-x-auto scrollbar-hide max-w-xl">
+            {['funds', 'advisor', 'social', 'analyzer', 'boardroom', 'future', 'spend', 'dashboard'].map(item => (
+              <button key={item} onClick={() => setView(item)} className={`whitespace-nowrap px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-full transition-all duration-300 ${view === item ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                {item === 'analyzer' ? 'Medic' : item}
               </button>
             ))}
           </div>
@@ -97,9 +97,9 @@ const AppContent = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden absolute top-24 right-4 w-64 glass-panel p-2 rounded-2xl flex flex-col gap-1 z-50 animate-slide-up">
-            {['funds', 'advisor', 'dashboard'].map(item => (
+            {['funds', 'advisor', 'social', 'analyzer', 'boardroom', 'future', 'spend', 'dashboard'].map(item => (
               <button key={item} onClick={() => { setView(item); setIsMenuOpen(false); }} className={`px-6 py-4 text-sm font-bold uppercase text-left rounded-xl ${view === item ? 'bg-white text-black' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-                {item}
+                {item === 'analyzer' ? 'Medic' : item}
               </button>
             ))}
           </div>
